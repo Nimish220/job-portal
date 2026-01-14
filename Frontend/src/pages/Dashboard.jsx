@@ -22,26 +22,34 @@ const Dashboard = () => {
 
   // Fetch jobs from backend and normalize company field
   useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        const res = await fetch(`${backend_url}/jobs`);
-        const data = await res.json();
-        if (data.success) {
-          const normalizedJobs = data.jobs.map(job => ({
-            ...job,
-            company: job.company || job.recruiter?.companyName || job.recruiterName || "Unknown Company"
-          }));
-          setJobs(normalizedJobs);
-        }
-      } catch (err) {
-        console.error("Failed to fetch jobs:", err);
-      } finally {
-        setIsLoading(false);
+  const fetchJobs = async () => {
+    try {
+      //  FIX: Added /api/v1/ prefix
+      const res = await fetch(`${backend_url}/api/v1/jobs`);
+      
+      if (!res.ok) throw new Error("Server returned 404/500");
+      
+      const data = await res.json();
+      
+      // If backend returns data directly as an array:
+      const jobList = Array.isArray(data) ? data : data.jobs;
+      
+      if (jobList) {
+        const normalizedJobs = jobList.map(job => ({
+          ...job,
+          company: job.company || job.recruiter?.companyName || "Unknown Company"
+        }));
+        setJobs(normalizedJobs);
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch jobs:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchJobs();
-  }, []);
+  fetchJobs();
+}, [backend_url]);
 
   // Fetch applied jobs for current user
   useEffect(() => {

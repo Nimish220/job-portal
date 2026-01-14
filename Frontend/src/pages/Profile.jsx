@@ -7,88 +7,69 @@ import {
 } from 'react-icons/fi';
 import { FaLinkedin, FaTwitter, FaGlobe } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-// import Navbar from '../components/Header/UserNavbar'; // ya jahan bhi User Navbar ka path ho
 import NavSearchBar from '../components/Header/NavSearchBar';
 import axios from 'axios';
 
-
 const Profile = () => {
   const [profileData, setProfileData] = useState({
-    name: 'Prachi Shirsale',
-    degree: 'MCA (Management)',
-    university: 'MIT World Peace University',
-    email: 'prachishirsale@gmail.com',
-    city: 'Pune, Maharashtra',
-    github: 'PrachiShirsale30',
-    about: 'This is a dummy text for the user\'s about section.',
-    skills: ['Java', 'SQL', 'Data Structure'],
+    name: '',
+    degree: '',
+    university: '',
+    email: '',
+    city: '',
+    github: '',
+    about: '',
+    skills: [],
     profilePhoto: null,
-    experience: 'Experience will be listed here.'
+    experience: ''
   });
 
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [isEditingSkills, setIsEditingSkills] = useState(false);
-  const [editedSkills, setEditedSkills] = useState(profileData.skills);
+  const [editedSkills, setEditedSkills] = useState([]);
   const [isEditingAbout, setIsEditingAbout] = useState(false);
-  const [editedAbout, setEditedAbout] = useState(profileData.about);
+  const [editedAbout, setEditedAbout] = useState('');
   const [isEditingExperience, setIsEditingExperience] = useState(false);
-  const [editedExperience, setEditedExperience] = useState(profileData.experience);
+  const [editedExperience, setEditedExperience] = useState('');
 
-  // useEffect(() => {
-  //   const savedProfile = JSON.parse(localStorage.getItem('profileData')) || {};
-  //   if (Object.keys(savedProfile).length > 0) {
-  //     setProfileData(prev => ({
-  //       ...prev,
-  //       ...savedProfile,
-  //       skills: savedProfile.skills || prev.skills,
-  //       experience: savedProfile.experience || prev.experience,
-  //       about: savedProfile.about || prev.about
-  //     }));
-  //     setEditedAbout(savedProfile.about || profileData.about);
-  //     setEditedExperience(savedProfile.experience || profileData.experience);
-  //   }
-  // }, []);
-  const backend_url = import.meta.env.VITE_BACKEND_URL
-useEffect(() => {
-  const fetchProfile = async () => {
-    try {
-      const res = await axios.get(backend_url+"/users/profile", {
-        
-        withCredentials: true // ✅ Required for cookie-based auth
-      });
+  const backend_url = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
-      // const text = await res.text(); // temp debug
-      // console.log(text); // see what's coming
-      // const data = JSON.parse(text);
-      const data = await res.data
-      console.log(data)
-      console.log(data.user)
-      if (data.success) {
-        setProfileData({
-          name: data.user.name,
-          degree: data.user.degree || '',
-          university: data.user.university || '',
-          email: data.user.email,
-          city: data.user.city || '',
-          github: data.user.github || '',
-          about: data.user.about || '',
-          skills: data.user.skills || [],
-          profilePhoto: data.user.profilePhoto || null,
-          experience: data.user.experience || '',
+  //  FIXED: Corrected API path and Data Mapping
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get(`${backend_url}/api/v1/users/profile`, {
+          withCredentials: true 
         });
 
-        setEditedAbout(data.user.about || '');
-        setEditedExperience(data.user.experience || '');
+        const data = res.data;
+        if (data.success && data.user) {
+          const user = data.user;
+          setProfileData({
+            name: user.name || '',
+            degree: user.degree || '',
+            university: user.university || '',
+            email: user.email || '',
+            city: user.city || '', //  Matches your console log
+            github: user.github || '',
+            about: user.about || '',
+            skills: user.skills || [],
+            profilePhoto: user.profilePhoto || null,
+            experience: user.experience || '', //  Matches your console log
+          });
+
+          setEditedAbout(user.about || '');
+          setEditedExperience(user.experience || '');
+          setEditedSkills(user.skills || []);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
       }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    }
-  };
+    };
 
-  fetchProfile();
-}, []);
+    fetchProfile();
+  }, [backend_url]);
 
-  
   const handlePhotoUpload = (e) => {
     setProfilePhoto(URL.createObjectURL(e.target.files[0]));
   };
@@ -98,94 +79,55 @@ useEffect(() => {
     setEditedSkills(profileData.skills);
   };
 
-  // const handleSkillsSave = () => {
-  //   setProfileData(prev => ({
-  //     ...prev,
-  //     skills: editedSkills
-  //   }));
-  //   localStorage.setItem('profileData', JSON.stringify({ ...profileData, skills: editedSkills }));
-  //   setIsEditingSkills(false);
-  // };
-
-const handleSkillsSave = async () => {
-  try {
-    const res = await axios.put(backend_url+"/users/edit-profile",
-      {skills: editedSkills},
-      {withCredentials:true}, // JWT cookie bhejne ke liye
-      
-    );
-    console.log(res.data)
-    const data =res.data
-    if (data.success) {
-      setProfileData(prev => ({ ...prev, skills: editedSkills }));
-      setIsEditingSkills(false);
-    } else {
-      alert("Failed to save skills");
+  const handleSkillsSave = async () => {
+    try {
+      const res = await axios.put(`${backend_url}/api/v1/users/edit-profile`,
+        { skills: editedSkills },
+        { withCredentials: true }
+      );
+      if (res.data.success) {
+        setProfileData(prev => ({ ...prev, skills: editedSkills }));
+        setIsEditingSkills(false);
+      }
+    } catch (err) {
+      console.error("handleSkillsSave Error:", err);
     }
-  } catch (err) {
-    console.error("handleSkillsSave Error:", err);
-  }
-};
-
-
-
-
-
-  // const handleAboutSave = () => {
-  //   setProfileData(prev => ({...prev, about: editedAbout}));
-  //   localStorage.setItem('profileData', JSON.stringify({ ...profileData, about: editedAbout}));
-  //   setIsEditingAbout(false);
-  // };
-
-  // const handleExperienceSave = () => {
-  //   setProfileData(prev => ({...prev, experience:editedExperience}));
-  //   localStorage.setItem('profileData', JSON.stringify({ ...profileData, experience:editedExperience}));
-  //   setIsEditingExperience(false);
-  // }
+  };
 
   const handleExperienceSave = async () => {
-  try {
-    const updated = { ...profileData, experience: editedExperience };
-
-    const res = await axios.put(backend_url+"/users/edit-profile",
-      updated,
-      {withCredentials: true},
-      
-    );
-    console.log(res.data.experience)
-    const data =res.data
-    if (data.success) {
-      setProfileData(updated);
-      setIsEditingExperience(false);
+    try {
+      const res = await axios.put(`${backend_url}/api/v1/users/edit-profile`,
+        { experience: editedExperience },
+        { withCredentials: true }
+      );
+      if (res.data.success) {
+        setProfileData(prev => ({ ...prev, experience: editedExperience }));
+        setIsEditingExperience(false);
+      }
+    } catch (err) {
+      console.error("Failed to save experience:", err);
     }
-  } catch (err) {
-    console.error("Failed to save experience:", err);
-  }
-};
-const handleAboutSave = async () => {
-  try {
-    const updated = { ...profileData, about: editedAbout };
+  };
 
-    const res = await axios.put(backend_url+"/users/edit-profile",
-      updated,
-      {withCredentials: true},
-      
-    );
-    console.log(res.data.about)
-    const data =res.data
-    if (data.success) {
-      setProfileData(updated);
-      setIsEditingAbout(false);
+  const handleAboutSave = async () => {
+    try {
+      const res = await axios.put(`${backend_url}/api/v1/users/edit-profile`,
+        { about: editedAbout },
+        { withCredentials: true }
+      );
+      if (res.data.success) {
+        setProfileData(prev => ({ ...prev, about: editedAbout }));
+        setIsEditingAbout(false);
+      }
+    } catch (err) {
+      console.error("Failed to save about:", err);
     }
-  } catch (err) {
-    console.error("Failed to save experience:", err);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-green-50 font-sans">
       <NavSearchBar
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        toggleSidebar={() => {}}
         showHamburger={true}
       />
 
@@ -204,29 +146,17 @@ const handleAboutSave = async () => {
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <div className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition duration-300">
+            <div className="bg-white rounded-3xl shadow-lg">
               <div className="bg-gradient-to-r from-[#5F9D08] to-[#4A8B07] h-32 rounded-t-3xl relative">
                 <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
-                  <div className="relative group">
-                    <div className="w-28 h-28 rounded-full border-4 border-white bg-gray-100 shadow-xl overflow-hidden hover:scale-105 transition">
-                      {profilePhoto ? (
-                        <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-2xl text-[#5F9D08] font-bold">
-                          {profileData.name.split(' ').map(n => n[0]).join('')}
-                        </div>
-                      )}
-                    </div>
-                    <label htmlFor="profilePhotoInput" className="absolute bottom-1 right-0 p-2 bg-white rounded-full shadow hover:scale-110 cursor-pointer transition">
-                      <FiEdit className="text-[#5F9D08]" />
-                      <input
-                        id="profilePhotoInput"
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                    </label>
+                  <div className="w-28 h-28 rounded-full border-4 border-white bg-gray-100 overflow-hidden">
+                    {profilePhoto ? (
+                      <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-2xl text-[#5F9D08] font-bold">
+                        {profileData.name ? profileData.name.split(' ').map(n => n[0]).join('') : 'U'}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -237,198 +167,81 @@ const handleAboutSave = async () => {
                 <p className="text-gray-500 text-sm mt-1">{profileData.university}</p>
 
                 <div className="mt-6 bg-gray-100 p-4 rounded-xl text-left space-y-4">
-                  {[{
-                    icon: <FiMail />, text: profileData.email
-                  }, {
-                    icon: <FiMapPin />, text: profileData.city
-                  }, {
-                    icon: <FiGithub />, text: `github.com/${profileData.github}`, link: `https://github.com/${profileData.github}`
-                  }].map(({ icon, text, link }, i) => (
-                    <a key={i} href={link || undefined} className="flex items-center space-x-3 text-gray-600 hover:text-[#5F9D08] transition" target="_blank" rel="noreferrer">
-                      <div className="p-2 bg-white rounded-full shadow">
-                        {icon}
-                      </div>
-                      <span className="text-sm font-medium break-all">{text}</span>
-                    </a>
-                  ))}
+                  <div className="flex items-center space-x-3 text-gray-600">
+                    <FiMail /> <span className="text-sm">{profileData.email}</span>
+                  </div>
+                  <div className="flex items-center space-x-3 text-gray-600">
+                    <FiMapPin /> <span className="text-sm">{profileData.city}</span>
+                  </div>
+                  <div className="flex items-center space-x-3 text-gray-600">
+                    <FiGithub /> <span className="text-sm truncate">{profileData.github}</span>
+                  </div>
                 </div>
 
-                <div className="flex justify-center space-x-4 mt-6">
-                  {[FaLinkedin, FaTwitter, FaGlobe].map((Icon, i) => (
-                    <a key={i} href="#" className="p-2 bg-white rounded-full shadow hover:bg-green-100 hover:text-[#5F9D08] transition">
-                      <Icon size={18} />
-                    </a>
-                  ))}
-                </div>
-
-                <hr className="my-6 border-gray-200" />
-
-                <nav className="space-y-2">
-                  {[{
-                    to: '/users/edit-profile', icon: FiUser, text: 'Edit Profile'
-                  }, {
-                    to: '#', icon: FiLock, text: 'Change Password'
-                  }].map(({ to, icon: Icon, text }, i) => (
-                    <Link
-                      key={i}
-                      to={to}
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100 hover:text-[#5F9D08] rounded-lg transition"
-                    >
-                      <Icon className="mr-2 text-[#5F9D08]" /> {text}
-                    </Link>
-                  ))}
-                  <button className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-100 rounded-lg transition">
-                    <FiLogOut className="mr-2" /> Sign Out
-                  </button>
+                <nav className="mt-6 space-y-2">
+                  <Link to='/users/edit-profile' className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100 rounded-lg">
+                    <FiUser className="mr-2 text-[#5F9D08]" /> Edit Profile
+                  </Link>
                 </nav>
               </div>
             </div>
           </motion.div>
 
           {/* Main Section */}
-          <motion.div
-            className="flex-1"
-            initial={{ x: 50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-
-            {/* About Section */}
-            <Section 
-            title="About Me" 
-            icon={FiEdit}
-            isEditing={isEditingAbout}
-            onEdit={() =>{
-              setIsEditingAbout(true);
-              setEditedAbout(profileData.about);
-            }}
-            onSave={handleAboutSave}
-            >
-            {isEditingAbout ? (
-              <textarea
-              className="w-full p-2 border rounded text-gray-700"
-              rows={4}
-              value={editedAbout}
-              onChange={(e) => setEditedAbout(e.target.value)}
-              />
-            ):(
-              <p className="text-gray-700 leading-relaxed">
-                {profileData.about}
-              </p>
-            )}
+          <div className="flex-1">
+            <Section title="About Me" icon={FiEdit} isEditing={isEditingAbout} onEdit={() => setIsEditingAbout(true)} onSave={handleAboutSave}>
+              {isEditingAbout ? (
+                <textarea className="w-full p-2 border rounded text-gray-700" rows={4} value={editedAbout} onChange={(e) => setEditedAbout(e.target.value)} />
+              ) : (
+                <p className="text-gray-700 leading-relaxed">{profileData.about || "No info provided."}</p>
+              )}
             </Section>
 
-            {/* Skills Section with Edit on Card */}
-            <Section
-              title="Skills"
-              icon={FiEdit}
-              isEditing={isEditingSkills}
-              onEdit={handleSkillsEdit}
-              onSave={handleSkillsSave}
-            >
-              <div className="flex flex-wrap gap-3 mb-3">
+            <Section title="Skills" icon={FiEdit} isEditing={isEditingSkills} onEdit={handleSkillsEdit} onSave={handleSkillsSave}>
+              <div className="flex flex-wrap gap-3">
                 {isEditingSkills ? (
                   editedSkills.map((skill, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-300"
-                    >
-                      <input
-                        value={skill}
-                        onChange={(e) => {
-                          const updated = [...editedSkills];
-                          updated[index] = e.target.value;
-                          setEditedSkills(updated);
-                        }}
-                        className="bg-transparent text-sm focus:outline-none"
-                      />
-                      <button
-                        onClick={() => {
-                          const updated = [...editedSkills];
-                          updated.splice(index, 1);
-                          setEditedSkills(updated);
-                        }}
-                        className="text-red-500 text-sm hover:text-red-700"
-                        title="Remove skill"
-                      >
-                        ×
-                      </button>
-                    </div>
+                    <input key={index} value={skill} onChange={(e) => {
+                      const updated = [...editedSkills];
+                      updated[index] = e.target.value;
+                      setEditedSkills(updated);
+                    }} className="border px-2 py-1 rounded-full text-sm w-24" />
                   ))
                 ) : (
                   profileData.skills.map((skill, i) => (
-                    <span key={i} className="bg-green-100 text-[#5F9D08] px-3 py-1 rounded-full text-sm font-medium shadow">
+                    <span key={i} className="bg-green-100 text-[#5F9D08] px-3 py-1 rounded-full text-sm font-medium">
                       {skill}
                     </span>
                   ))
                 )}
               </div>
-
-              {isEditingSkills && (
-                <button
-                  onClick={() => setEditedSkills([...editedSkills, ''])}
-                  className="mt-2 text-sm text-[#5F9D08] hover:underline focus:outline-none"
-                >
-                  + Add Skill
-                </button>
-              )}
             </Section>
 
-            {/* Experience Section */}
-            <Section title="Experience" 
-            icon={FiEdit}
-            isEditing={isEditingExperience}
-            onEdit={() => {
-              setIsEditingExperience(true);
-              setEditedExperience(profileData.experience);
-            }}
-            onSave={handleExperienceSave}
-            >
+            <Section title="Experience" icon={FiEdit} isEditing={isEditingExperience} onEdit={() => setIsEditingExperience(true)} onSave={handleExperienceSave}>
               {isEditingExperience ? (
-                <textarea
-                className="w-full p-2 border rounded text-gray-700"
-                rows={4}
-                value={editedExperience}
-                onChange={(e) => setEditedExperience(e.target.value)}
-                />
+                <textarea className="w-full p-2 border rounded text-gray-700" rows={4} value={editedExperience} onChange={(e) => setEditedExperience(e.target.value)} />
               ) : (
-              profileData.experience ? (
-                <div className="bg-white border-l-4 border-[#5F9D08] p-4 rounded-lg shadow">
-                  <p className="text-gray-700">{profileData.experience}</p>
-                </div>
-              ) : (
-                <div className="text-gray-400">No experience added yet</div>
-              )
+                <p className="text-gray-700">{profileData.experience || "No experience added yet."}</p>
               )}
             </Section>
-
-          </motion.div>
+          </div>
         </div>
       </motion.div>
     </div>
   );
 };
 
-// Reusable Section Component
 const Section = ({ title, icon: Icon, children, isEditing, onEdit, onSave }) => (
   <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
     <div className="flex justify-between items-center mb-4">
       <h2 className="text-xl font-semibold text-gray-800 border-l-4 border-[#5F9D08] pl-4">{title}</h2>
-      {onEdit && (
-        isEditing ? (
-          <button onClick={onSave} className="text-white bg-[#5F9D08] hover:bg-green-700 px-3 py-1 rounded-full text-sm">
-            Save
-          </button>
-        ) : (
-          <button onClick={onEdit} className="text-[#5F9D08] hover:text-green-700 p-2 rounded-full hover:bg-green-100 transition">
-            <Icon />
-          </button>
-        )
+      {isEditing ? (
+        <button onClick={onSave} className="text-white bg-[#5F9D08] px-3 py-1 rounded-full text-sm">Save</button>
+      ) : (
+        <button onClick={onEdit} className="text-[#5F9D08] p-2 hover:bg-green-100 rounded-full"><Icon /></button>
       )}
     </div>
-    <div className="bg-gray-50 p-4 rounded-xl">
-      {children}
-    </div>
+    <div className="bg-gray-50 p-4 rounded-xl">{children}</div>
   </div>
 );
 

@@ -21,7 +21,8 @@
 // export default upload;
 
 import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
+import pkg from "multer-storage-cloudinary";
+const CloudinaryStorage = pkg.CloudinaryStorage || pkg;
 import cloudinary from "../config/cloudinaryConfig.js"; // import your cloudinary config
 
 const storage = new CloudinaryStorage({

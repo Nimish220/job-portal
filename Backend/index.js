@@ -14,22 +14,19 @@ import { protect, isRecruiter } from "./middlewares/authMiddleware.js";
 import { User } from "./models/User.js";
 import applicationRoutes from "./routes/applicationRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
-import { getInternships } from "./controllers/userController.js";
-import { getInternshipById } from "./controllers/userController.js";
+import { getInternships, getInternshipById } from "./controllers/userController.js";
 
 dotenv.config();
 const app = express();
 
-// ✅ Allow multiple Vite dev ports to avoid CORS issues
+// ✅ Allow credentials and specific origins to resolve 403 Forbidden errors
 app.use(
   cors({
     origin: [
         "http://localhost:5173",
-        // "http://localhost:5174",
-        // "http://localhost:5175",
-        "https://job-portal-frontend-4465.onrender.com"  //ye frontend ka url hai deployed wala
+        "https://job-portal-frontend-4465.onrender.com"
     ],
-    credentials: true,
+    credentials: true, // Required for authentication cookies
   })
 );
 
@@ -37,15 +34,17 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api/recruiters", recruiterRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/upload", upload);
-// app.use("/api/user", userRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/users/notifications", notificationRoutes);
-app.use("/api/recruiters/notifications", notificationRoutes);
-// Get all jobs
-app.get("/api/jobs", async (req, res) => {
+// ✅ FIXED: All middleware now uses the /v1 prefix to match the Frontend
+app.use("/api/v1/recruiters", recruiterRoutes);
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/auth", authRoutes); 
+app.use("/api/v1/applications", applicationRoutes);
+app.use("/api/v1/upload", upload);
+app.use("/api/v1/users/notifications", notificationRoutes);
+app.use("/api/v1/recruiters/notifications", notificationRoutes);
+
+// ✅ FIXED: Get all jobs route
+app.get("/api/v1/jobs", async (req, res) => {
   try {
     const jobs = await Job.find().populate("recruiter", "companyName name email");
     res.json(jobs);
@@ -53,8 +52,9 @@ app.get("/api/jobs", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch jobs" });
   }
 });
-// Get job by ID
-app.get("/api/jobs/:id", async (req, res) => {
+
+// ✅ FIXED: Get job by ID (Resolves the SyntaxError: Unexpected token '<')
+app.get("/api/v1/jobs/:id", async (req, res) => {
   try {
     const job = await Job.findById(req.params.id).populate("recruiter", "companyName email");
     if (!job) {
@@ -65,10 +65,13 @@ app.get("/api/jobs/:id", async (req, res) => {
     res.status(500).json({ message: "Error fetching job", error: err.message });
   }
 });
-app.get("/api/internships", getInternships);
-app.get("/api/internships/:id", getInternshipById);
-// app.get("/api/jobs/:id/candidates", protect, isRecruiter, seeCandidates);
-app.get('/api/applicants/:applicantId', protect, isRecruiter, async (req, res) => {
+
+// ✅ FIXED: Internship routes now versioned
+app.get("/api/v1/internships", getInternships);
+app.get("/api/v1/internships/:id", getInternshipById);
+
+// ✅ FIXED: Applicant details route versioned
+app.get('/api/v1/applicants/:applicantId', protect, isRecruiter, async (req, res) => {
   try {
     const user = await User.findById(req.params.applicantId)
       .select("name email photo degree university location github about skills experiences");
@@ -79,14 +82,11 @@ app.get('/api/applicants/:applicantId', protect, isRecruiter, async (req, res) =
   }
 });
 
-app.use("/api/applications", applicationRoutes);
 const PORT = process.env.PORT || 8000;
 
 app.get("/", (req, res) => {
-  res.send("Hello from backend");
+  res.send("Hello from versioned backend");
 })
-
-
 
 connectDB()
   .then(() => {

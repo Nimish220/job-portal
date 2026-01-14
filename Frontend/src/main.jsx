@@ -8,7 +8,9 @@ import AuthProvider from './AuthProvider.jsx';
 
 createRoot(document.getElementById('root')).render(
   
-    <AuthProvider><App /></AuthProvider>
+    <AuthProvider>
+        <App />
+    </AuthProvider>
     
   
 )

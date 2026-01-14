@@ -28,6 +28,9 @@ const AuthProvider = ({ children }) => {
         console.log(" Not authenticated.");
         setLoading(false);
       } 
+      finally {
+        setLoading(false); 
+      }
     };
 
     checkAuth();

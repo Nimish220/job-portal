@@ -1,4 +1,4 @@
-import axios from 'axios';
+/*import axios from 'axios';
 
 const backend_url = import.meta.env.VITE_BACKEND_URL
 export const axiosInstance = axios.create({
@@ -11,4 +11,20 @@ export const axiosInstance = axios.create({
     // You can add more headers here if needed (like Authorization)
   },
 });
- 
+ */
+import axios from 'axios';
+
+// This handles ALL cases: 
+// 1. If VITE_BACKEND_URL is found in the future, it uses it.
+// 2. Otherwise, it defaults to your local backend on port 8000.
+const backend_url = import.meta.env.VITE_BACKEND_URL 
+  ? `${import.meta.env.VITE_BACKEND_URL}/api/v1` 
+  : 'http://localhost:8000/api/v1';
+
+export const axiosInstance = axios.create({
+  baseURL: backend_url,  
+  withCredentials: true, // This allows the browser to store your login session
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});

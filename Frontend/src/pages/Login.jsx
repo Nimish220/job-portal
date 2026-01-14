@@ -40,6 +40,8 @@ const Login = () => {
     }
   };
 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
   return (
     <>
       <header className="bg-white shadow-md sticky top-0 z-50">
