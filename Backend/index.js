@@ -35,16 +35,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ✅ FIXED: All middleware now uses the /v1 prefix to match the Frontend
-app.use("/api/v1/recruiters", recruiterRoutes);
-app.use("/api/v1/users", userRoutes);
-app.use("/api/v1/auth", authRoutes); 
-app.use("/api/v1/applications", applicationRoutes);
-app.use("/api/v1/upload", upload);
-app.use("/api/v1/users/notifications", notificationRoutes);
-app.use("/api/v1/recruiters/notifications", notificationRoutes);
+app.use("/api/recruiters", recruiterRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes); 
+app.use("/api/applications", applicationRoutes);
+app.use("/api/upload", upload);
+app.use("/api/users/notifications", notificationRoutes);
+app.use("/api/recruiters/notifications", notificationRoutes);
 
 // ✅ FIXED: Get all jobs route
-app.get("/api/v1/jobs", async (req, res) => {
+app.get("/api/jobs", async (req, res) => {
   try {
     const jobs = await Job.find().populate("recruiter", "companyName name email");
     res.json(jobs);
@@ -54,7 +54,7 @@ app.get("/api/v1/jobs", async (req, res) => {
 });
 
 // ✅ FIXED: Get job by ID (Resolves the SyntaxError: Unexpected token '<')
-app.get("/api/v1/jobs/:id", async (req, res) => {
+app.get("/api/jobs/:id", async (req, res) => {
   try {
     const job = await Job.findById(req.params.id).populate("recruiter", "companyName email");
     if (!job) {
@@ -67,11 +67,11 @@ app.get("/api/v1/jobs/:id", async (req, res) => {
 });
 
 // ✅ FIXED: Internship routes now versioned
-app.get("/api/v1/internships", getInternships);
-app.get("/api/v1/internships/:id", getInternshipById);
+app.get("/api/internships", getInternships);
+app.get("/api/internships/:id", getInternshipById);
 
 // ✅ FIXED: Applicant details route versioned
-app.get('/api/v1/applicants/:applicantId', protect, isRecruiter, async (req, res) => {
+app.get('/api/applicants/:applicantId', protect, isRecruiter, async (req, res) => {
   try {
     const user = await User.findById(req.params.applicantId)
       .select("name email photo degree university location github about skills experiences");

@@ -57,7 +57,7 @@ const EditProfile = () => {
 
     try {
       //  Sending keys exactly as the backend expects (singular)
-      const res = await fetch(`${base}/api/v1/users/edit-profile`, {
+      const res = await fetch(`${base}/users/edit-profile`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include", //  Required for auth session
@@ -73,7 +73,7 @@ const EditProfile = () => {
           alert("Error: " + data.message);
         }
       } else {
-        console.error("Non-JSON response. Ensure backend routes use /api/v1.");
+        console.error("Non-JSON response. Ensure backend routes use .");
       }
     } catch (error) {
       console.error("Network Error:", error);

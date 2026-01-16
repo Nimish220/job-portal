@@ -42,7 +42,7 @@ const RecruiterProfile = () => {
   const fetchProfile = async () => {
   try {
     const res = await axios.get(
-      backend_url + "/recruiters/getProfile",
+      `${backend_url}/api/recruiters/getProfile`,
       { withCredentials: true }
     );
 

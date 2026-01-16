@@ -24,8 +24,8 @@ const Dashboard = () => {
   useEffect(() => {
   const fetchJobs = async () => {
     try {
-      //  FIX: Added /api/v1/ prefix
-      const res = await fetch(`${backend_url}/api/v1/jobs`);
+      //  FIX: Added / prefix
+      const res = await fetch(`${backend_url}/api/jobs`);
       
       if (!res.ok) throw new Error("Server returned 404/500");
       

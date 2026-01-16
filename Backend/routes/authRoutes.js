@@ -3,10 +3,11 @@ import express from "express";
 import { User } from "../models/User.js";
 import { Recruiter } from "../models/Recruiter.js";
 import { protect } from "../middlewares/authMiddleware.js";  
-
+import { silentCheck } from
+ "../middlewares/authMiddleware.js";
 const router = express.Router();
 
-router.get("/check", protect, async (req, res) => {
+/*router.get("/check", protect, async (req, res) => {
   try {
     if (req.user?.role === "Seeker") {
       return res.json({ authenticated: true, role: "user" });
@@ -21,7 +22,8 @@ router.get("/check", protect, async (req, res) => {
     console.error("Auth check error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
-});
+});*/
 
+router.get("/check", silentCheck);
 
 export default router;

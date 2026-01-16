@@ -10,6 +10,7 @@ const RecruiterLogin = () => {
     const navigate = useNavigate();
     const [showpassword, setShowPassword] = useState(false);
     const { login } = useRecruiterStore();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
   
     const handleSubmit = async (e) => {  // jisne bhi phele likha tha bhai recruiterStore bhi dekh liya kr
       e.preventDefault();

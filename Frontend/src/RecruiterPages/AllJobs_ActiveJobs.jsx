@@ -43,7 +43,7 @@ function JobPage() {
     setJobsLoading(true);
     setJobsError(null);
     try {
-      const response = await axios.get(`${backend_url}/recruiters/myJobs`, { withCredentials: true });
+      const response = await axios.get(`${backend_url}/api/recruiters/myJobs`, { withCredentials: true });
       const recruiterAllJobs = response.data.jobs.filter(job => isActiveStatus(job.status));
       setJobs(recruiterAllJobs);
     } catch (error) {
@@ -61,12 +61,12 @@ function JobPage() {
   setInternshipsLoading(true);
   setInternshipsError(null);
   try {
-    const response = await axios.get(`${backend_url}/recruiters/myInternships`, {
+    const response = await axios.get(`${backend_url}/api/recruiters/myInternships`, {
       withCredentials: true,
     });
 
     const recruiterAllInternships = response.data.internships;
-    const afterfilterInternships = recruiterAllInternships.filter((i) => i.status === 'open');
+    const afterfilterInternships = recruiterAllInternships.filter((i) => isActiveStatus(i.status));  // Use your isActiveStatus utility for consistency,
     console.log(afterfilterInternships);
     setInternships(afterfilterInternships);
   } catch (error) {
@@ -82,7 +82,7 @@ function JobPage() {
   // Fetch Profile
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(`${backend_url}/recruiters/getProfile`, { withCredentials: true });
+      const res = await axios.get(`${backend_url}/api/recruiters/getProfile`, { withCredentials: true });
       setUserName(res.data.recruiter?.companyName || 'Guest');
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -100,7 +100,7 @@ function JobPage() {
   // Close job/internship actions
   const handleCloseJob = async (jobId) => {
     try {
-      await axios.post(`${backend_url}/recruiters/closeJob/${jobId}`, {}, { withCredentials: true });
+      await axios.post(`${backend_url}/api/recruiters/closeJob/${jobId}`, {}, { withCredentials: true });
       fetchJobs(); // ✅ refetch instead of just filtering
       toast.success('Job closed successfully');
     } catch (error) {
@@ -111,7 +111,7 @@ function JobPage() {
 
   const handleCloseInternship = async (internshipId) => {
     try {
-      await axios.post(`${backend_url}/recruiters/closeInternship/${internshipId}`, {}, { withCredentials: true });
+      await axios.post(`${backend_url}/api/recruiters/closeInternship/${internshipId}`, {}, { withCredentials: true });
       fetchInternships(); // ✅ refetch instead of just filtering
       toast.success('Internship closed successfully');
     } catch (error) {

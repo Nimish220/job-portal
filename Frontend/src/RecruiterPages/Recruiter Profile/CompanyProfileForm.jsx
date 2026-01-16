@@ -19,7 +19,7 @@ const CompanyProfileForm = () => {
     (async () => {
       try {
         const res = await axios.get(
-          backend_url+"/recruiters/getProfile",
+          backend_url+"/api/recruiters/getProfile",
           { withCredentials: true }
         );
         setCompany(res.data.recruiter || null);
@@ -70,14 +70,16 @@ const CompanyProfileForm = () => {
       </Section>
 
       <div className="text-center">
-        <button
-          onClick={() =>
-            navigate("/recruiters/updateRecruiter", { state: { recruiter: company } })
-          }
-          className="w-full md:w-1/2 py-3 bg-[#5F9D08] text-white font-semibold rounded-md"
-        >
-          Edit Recruiter
-        </button>
+
+<button
+  type="button" // Good practice to prevent form issues
+  onClick={() =>
+    navigate("/recruiters/updateRecruiter", { state: { recruiter: company } })
+  }
+  className="w-full md:w-1/2 py-3 bg-[#5F9D08] text-white font-semibold rounded-md"
+>
+  Edit Recruiter
+</button>
       </div>
     </motion.div>
   );

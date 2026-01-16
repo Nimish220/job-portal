@@ -26,8 +26,8 @@ import ApplicantsProfile from './RecruiterPages/ApplicantsProfile.jsx';
 import JobPage from './pages/JobPage.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
 import ChangePassword from './RecruiterPages/RecruiterData/ChangePassword.jsx';
-import { useEffect } from 'react';
 import  userStore  from './store/userStore';
+import recruiterStore from './store/recruiterStore';
 // import JobDetails from "./pages/JobDetails";
 // ✅ NEW IMPORT for Apply Now Page
 import ApplyJob from './pages/ApplyJob.jsx';
@@ -40,22 +40,7 @@ import Support from './pages/Support.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 
 function App() {
-  const fetchUser = userStore((state) => state.fetchUser);
-  const user = userStore((state) => state.user);
-  const fetchedUser = userStore((state) => state.fetchedUser);
-
-  // useEffect(() => {
-  //   fetchUser();
-  // }, []);
-  // useEffect(() => {
-  //   console.log('🧠 Zustand user:', user);
-  //   console.log('✅ Zustand fetchedUser:', fetchedUser);
-  // }, [user, fetchedUser]);
-
-  // if (!fetchedUser) {
-  //   return <div>Loading...</div>;
-  // }
-
+  
   return (
     
     <Router>
@@ -99,9 +84,15 @@ function App() {
         <Route path='/recruiters/postInternship' element={<ProtectedRoute allowedRole="recruiter"><PostJob_Internship /></ProtectedRoute>} />
         <Route path='/recruiters/acceptedApplicants' element={<ProtectedRoute allowedRole="recruiter"><AcceptedApplicants /></ProtectedRoute>} />
         <Route path='/recruiters/applicants/:jobId' element={<ProtectedRoute allowedRole="recruiter"><Applicants /></ProtectedRoute>} />
+        <Route path='/recruiters/internshipApplicants/:jobId' element={<ProtectedRoute allowedRole="recruiter"><Applicants /></ProtectedRoute>} />
         <Route path='/recruiters/updateRecruiter' element={<ProtectedRoute allowedRole="recruiter"><UpdateRecruiter /></ProtectedRoute>} />
         <Route path='/recruiters/applicantsProfile/:jobId/:applicantId' element={<ProtectedRoute allowedRole="recruiter"><ApplicantsProfile /></ProtectedRoute>} />
         <Route path='/recruiters/post-job/job' element={<ProtectedRoute allowedRole="recruiter"><PostJob_Job /></ProtectedRoute>} />
+        {/* ✅ Add this to App.js so the profile page knows it is an Internship applicant */}
+      <Route 
+        path='/recruiters/internshipApplicants/:jobId/:applicantId' 
+        element={<ProtectedRoute allowedRole="recruiter"><ApplicantsProfile /></ProtectedRoute>} 
+      />
         {/* <Route path='/recruiters/applicants/:jobId' element={<Applicants />} /> */}
         <Route path='/recruiters/post-job/internship' element={<ProtectedRoute allowedRole="recruiter"><PostJob_Internship /></ProtectedRoute>} />
         <Route path='/recruiters/change-password' element={<ChangePassword />} />

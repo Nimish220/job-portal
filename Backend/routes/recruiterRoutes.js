@@ -24,7 +24,8 @@ import {
   closeInternship,
   openInternship,
   deleteInternship,
-  getCandidateProfile
+  getCandidateProfile,
+  changePassword
 } from '../controllers/recruiterController.js';
 
 const router = express.Router();
@@ -33,6 +34,8 @@ const router = express.Router();
 router.post('/register', upload.single("panCardOrGstFile"), registerRecruiter);
 router.post('/login', loginRecruiter);
 router.post('/logout', protect, isRecruiter, recruiterLogout);
+// recruiterRoutes.js
+router.post('/change-password', protect, isRecruiter, changePassword);
 
 // Recruiter profile
 router.get('/getProfile', protect, isRecruiter, getProfile);
@@ -66,6 +69,6 @@ router.get(
   isRecruiter,
   getCandidateProfile
 );
-
+router.get('/internships/:jobId/candidate/:applicantId', protect, isRecruiter, getCandidateProfile);
 
 export default router;

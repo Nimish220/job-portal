@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { axiosInstance } from '../../utils/axiosInstance'; // ✅ Corrected path
+import { axiosInstance } from '../../utils/axiosInstance'; 
+import { Eye, EyeOff } from 'lucide-react'; 
 
 const ChangePassword = () => {
   const navigate = useNavigate();
@@ -9,6 +10,10 @@ const ChangePassword = () => {
     newPassword: '',
     confirmNewPassword: '',
   });
+
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -65,43 +70,74 @@ const ChangePassword = () => {
         {success && <p className="text-green-600 mb-3 text-center">{success}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* Current Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Current Password
             </label>
-            <input
-              type="password"
-              name="currentPassword"
-              value={formData.currentPassword}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
+            <div className="relative">
+              <input
+                type={showCurrent ? "text" : "password"}
+                name="currentPassword"
+                value={formData.currentPassword}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400"
+                onClick={() => setShowCurrent(!showCurrent)}
+              >
+                {showCurrent ? <Eye size={20} /> : <EyeOff size={20} />}
+              </button>
+            </div>
           </div>
 
+          {/* New Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               New Password
             </label>
-            <input
-              type="password"
-              name="newPassword"
-              value={formData.newPassword}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
+            <div className="relative">
+              <input
+                type={showNew ? "text" : "password"}
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400"
+                onClick={() => setShowNew(!showNew)}
+              >
+                {showNew ? <Eye size={20} /> : <EyeOff size={20} />}
+              </button>
+            </div>
           </div>
 
+          {/* Confirm New Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Confirm New Password
             </label>
-            <input
-              type="password"
-              name="confirmNewPassword"
-              value={formData.confirmNewPassword}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
+            <div className="relative">
+              <input
+                type={showConfirm ? "text" : "password"}
+                name="confirmNewPassword"
+                value={formData.confirmNewPassword}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400"
+                onClick={() => setShowConfirm(!showConfirm)}
+              >
+                {showConfirm ? <Eye size={20} /> : <EyeOff size={20} />}
+              </button>
+            </div>
           </div>
 
           <button

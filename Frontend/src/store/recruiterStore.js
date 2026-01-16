@@ -27,7 +27,13 @@ const recruiterStore = create((set) => ({
     const res = await axiosInstance.get("/recruiters/me");
     set({ recruiter: res.data.recruiter, loading: false });
   } catch (err) {
-    console.error("Failed to fetch recruiter:", err);
+    const status = err.response?.status;
+    
+    // ✅ PERMANENT FIX: If status is 401 or 403, it just means 
+    // this person isn't a recruiter. Don't log it as an error.
+    if (status !== 401 && status !== 403) {
+      console.error("Unexpected error fetching recruiter:", err);
+    }
     set({ recruiter: null, loading: false });
   }
 },
@@ -61,10 +67,11 @@ const recruiterStore = create((set) => ({
   logout: async () => {
     try {
       const response = await axiosInstance.post("/recruiters/logout");
-      return { success: false };
+      set({ recruiter: null, loading: false });
+      return { success: true };
     } catch (error) {
       set({ loading: false });
-      const msg = error.response.data.message;
+      const msg = error.response.data.message || "Logout failed";
       toast.error(msg);
     }
   },

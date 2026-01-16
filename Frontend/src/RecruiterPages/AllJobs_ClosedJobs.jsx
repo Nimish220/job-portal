@@ -35,7 +35,7 @@ function AllJobs_ClosedJobs() {
   // ✅ Fetch closed jobs
   const fetchJobs = async () => {
     try {
-      const response = await axios.get(`${backend_url}/recruiters/myJobs`, {
+      const response = await axios.get(`${backend_url}/api/recruiters/myJobs`, {
         withCredentials: true,
       });
       const recruiterAllJobs = response.data.jobs.filter((job) => job.status === 'closed');
@@ -51,7 +51,7 @@ function AllJobs_ClosedJobs() {
   // ✅ Fetch closed internships
   const fetchInternships = async () => {
     try {
-      const response = await axios.get(`${backend_url}/recruiters/myInternships`, {
+      const response = await axios.get(`${backend_url}/api/recruiters/myInternships`, {
         withCredentials: true,
       });
       const recruiterAllInternships = response.data.internships.filter((i) => i.status === 'closed');
@@ -68,7 +68,7 @@ function AllJobs_ClosedJobs() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`${backend_url}/recruiters/getProfile`, {
+        const res = await axios.get(`${backend_url}/api/recruiters/getProfile`, {
           withCredentials: true,
         });
         const recruiter = res.data.recruiter;
@@ -89,7 +89,7 @@ function AllJobs_ClosedJobs() {
   // ✅ Job Actions
   const handleOpenJob = async (jobId) => {
     try {
-      const res = await axios.post(`${backend_url}/recruiters/openJob/${jobId}`, {}, { withCredentials: true });
+      const res = await axios.post(`${backend_url}/api/recruiters/openJob/${jobId}`, {}, { withCredentials: true });
       if (res.data.success) {
         fetchJobs();
         toast.success("Job opened successfully");
@@ -102,7 +102,7 @@ function AllJobs_ClosedJobs() {
 
   const handleDeleteJob = async (jobId) => {
     try {
-      await axios.delete(`${backend_url}/recruiters/deleteJob/${jobId}`, { withCredentials: true });
+      await axios.delete(`${backend_url}/api/recruiters/deleteJob/${jobId}`, { withCredentials: true });
       fetchJobs();
       toast.success("Job deleted successfully");
     } catch (error) {
@@ -114,7 +114,7 @@ function AllJobs_ClosedJobs() {
   // ✅ Internship Actions
   const handleOpenInternship = async (internshipId) => {
     try {
-      const res = await axios.post(`${backend_url}/recruiters/openInternship/${internshipId}`, {}, { withCredentials: true });
+      const res = await axios.post(`${backend_url}/api/recruiters/openInternship/${internshipId}`, {}, { withCredentials: true });
       if (res.data.success) {
         fetchInternships();
         toast.success("Internship opened successfully");
@@ -127,7 +127,7 @@ function AllJobs_ClosedJobs() {
 
   const handleDeleteInternship = async (internshipId) => {
     try {
-      await axios.delete(`${backend_url}/recruiters/deleteInternship/${internshipId}`, { withCredentials: true });
+      await axios.delete(`${backend_url}/api/recruiters/deleteInternship/${internshipId}`, { withCredentials: true });
       fetchInternships();
       toast.success("Internship deleted successfully");
     } catch (error) {

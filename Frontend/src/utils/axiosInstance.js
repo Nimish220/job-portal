@@ -18,8 +18,8 @@ import axios from 'axios';
 // 1. If VITE_BACKEND_URL is found in the future, it uses it.
 // 2. Otherwise, it defaults to your local backend on port 8000.
 const backend_url = import.meta.env.VITE_BACKEND_URL 
-  ? `${import.meta.env.VITE_BACKEND_URL}/api/v1` 
-  : 'http://localhost:8000/api/v1';
+  ? `${import.meta.env.VITE_BACKEND_URL}/api` 
+  : 'http://localhost:8000/api';
 
 export const axiosInstance = axios.create({
   baseURL: backend_url,  

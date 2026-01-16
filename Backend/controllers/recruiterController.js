@@ -22,11 +22,12 @@ import { Notification } from "../models/Notification.js";
       });
 
       res.cookie("token", token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "None",
-        maxAge: 1 * 60 * 60 * 1000, // 1 hour
-      });
+  httpOnly: true,
+  // This logic is the "Permanent Fix"
+  secure: process.env.NODE_ENV === "production", 
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
+  maxAge: 1 * 60 * 60 * 1000, 
+});
 
       res.status(200).json({
         recruiter: {
@@ -137,7 +138,7 @@ import { Notification } from "../models/Notification.js";
       ...req.body,
     });
 
-    // 🔔 Notify all users
+    //  Notify all users
     const users = await User.find({}, "_id");
     const notifications = users.map(user => ({
       recipient: user._id,
@@ -218,7 +219,7 @@ import { Notification } from "../models/Notification.js";
       ...req.body,
     });
 
-    // 🔔 Notify all users
+    //  Notify all users
     const users = await User.find({}, "_id");
     const notifications = users.map(user => ({
       recipient: user._id,
@@ -268,7 +269,7 @@ import { Notification } from "../models/Notification.js";
     }
 
     const updatedRecruiter = await Recruiter.findByIdAndUpdate(
-      req.recruiter._id, // 🔑 only update the logged-in recruiter
+      req.recruiter._id, //  only update the logged-in recruiter
       updates,
       { new: true }
     );
@@ -284,7 +285,7 @@ import { Notification } from "../models/Notification.js";
   }
 };
 
-  // ✅ Get recruiter profile by ID
+  //  Get recruiter profile by ID
   export const getRecruiterProfile = async (req, res) => {
     try {
       const recruiter = await Recruiter.findById(req.params.id);
@@ -347,7 +348,7 @@ export const closeJob = async (req, res) => {
       job,
     });
   } catch (error) {
-    console.error("❌ Error in closeJob:", error);
+    console.error(" Error in closeJob:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -388,7 +389,7 @@ export const openJob = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Job opened successfully", job });
   } catch (error) {
-    console.error("❌ Error in openJob:", error);
+    console.error(" Error in openJob:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -473,7 +474,7 @@ export const closeInternship = async (req, res) => {
       internship,
     });
   } catch (error) {
-    console.error("❌ Error in closeInternship:", error);
+    console.error(" Error in closeInternship:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -497,7 +498,7 @@ export const openInternship = async (req, res) => {
       internship,
     });
   } catch (error) {
-    console.error("❌ Error opening internship:", error);
+    console.error(" Error opening internship:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -519,7 +520,7 @@ export const deleteInternship = async (req, res) => {
       message: "Internship deleted successfully",
     });
   } catch (error) {
-    console.error("❌ Error deleting internship:", error);
+    console.error(" Error deleting internship:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -528,34 +529,72 @@ export const getCandidateProfile = async (req, res) => {
   try {
     const { jobId, applicantId } = req.params;
 
-    // 1. Find the job & populate candidates
-    const job = await Job.findById(jobId).populate("candidates");
-    if (!job) {
-      return res.status(404).json({ message: "Job not found" });
+    // 1. Try to find the posting in the Job collection first
+    let posting = await Job.findById(jobId).populate("candidates");
+    
+    // 2. If not found in Jobs, check the Internship collection
+    if (!posting) {
+      posting = await Internship.findById(jobId).populate("candidates");
     }
 
-    // 2. Check applicant belongs to this job
-    const isCandidate = job.candidates.some(
+    // 3. If neither exists, return 404
+    if (!posting) {
+      return res.status(404).json({ message: "Job or Internship posting not found" });
+    }
+
+    // 4. Verify the applicant is actually part of this specific posting
+    const isCandidate = posting.candidates.some(
       (c) => c._id.toString() === applicantId
     );
+    
     if (!isCandidate) {
-      return res.status(404).json({ message: "Candidate not found in this job" });
+      return res.status(404).json({ message: "Candidate did not apply to this specific posting" });
     }
 
-    // 3. Fetch full user details (safe projection)
+    // 5. Fetch full user details (this populates the missing About, Skills, Experience)
     const user = await User.findById(applicantId).select(
       "name email university city degree github about skills experience profilePhoto resume"
     );
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User profile details not found" });
     }
 
     res.status(200).json(user);
   } catch (error) {
-    console.error("❌ Error fetching candidate profile:", error);
+    console.error("❌ Error in getCandidateProfile:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
+// CHANGE PASSWORD
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    // 1. Find the recruiter (req.recruiter is provided by your 'protect' middleware)
+    const recruiter = await Recruiter.findById(req.recruiter._id);
 
+    // 2. Compare the current password entered with the hashed password in the database
+    const isMatch = await bcrypt.compare(currentPassword, recruiter.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Current password is incorrect" });
+    }
+
+    // 3. Hash the new password before saving
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // 4. Update the password field and save
+    recruiter.password = hashedPassword;
+    await recruiter.save();
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Password updated successfully" 
+    });
+  } catch (error) {
+    console.error("Change Password Error:", error);
+    res.status(500).json({ success: false, message: "Server error while updating password" });
+  }
+};

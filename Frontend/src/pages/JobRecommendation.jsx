@@ -46,7 +46,7 @@ const JobRecommendations = () => {
   useEffect(() => {
     const fetchInternships = async () => {
       try {
-        const response = await fetch(backend_url + "/users/getInternships", {
+        const response = await fetch(backend_url + "/internships", {  // FIXED: Added / prefix and removed the /users/ part
           credentials: "include",
         });
         if (!response.ok) throw new Error("Failed to fetch internships");

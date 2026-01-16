@@ -38,7 +38,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`${backend_url}/api/v1/users/profile`, {
+        const res = await axios.get(`${backend_url}/users/profile`, {
           withCredentials: true 
         });
 
@@ -81,7 +81,7 @@ const Profile = () => {
 
   const handleSkillsSave = async () => {
     try {
-      const res = await axios.put(`${backend_url}/api/v1/users/edit-profile`,
+      const res = await axios.put(`${backend_url}/users/edit-profile`,
         { skills: editedSkills },
         { withCredentials: true }
       );
@@ -96,7 +96,7 @@ const Profile = () => {
 
   const handleExperienceSave = async () => {
     try {
-      const res = await axios.put(`${backend_url}/api/v1/users/edit-profile`,
+      const res = await axios.put(`${backend_url}/users/edit-profile`,
         { experience: editedExperience },
         { withCredentials: true }
       );
@@ -111,7 +111,7 @@ const Profile = () => {
 
   const handleAboutSave = async () => {
     try {
-      const res = await axios.put(`${backend_url}/api/v1/users/edit-profile`,
+      const res = await axios.put(`${backend_url}/users/edit-profile`,
         { about: editedAbout },
         { withCredentials: true }
       );

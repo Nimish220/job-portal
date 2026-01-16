@@ -1,14 +1,14 @@
 import express from "express";
 import { Job } from "../models/Job.js";
+import { Internship } from "../models/Internship.js";
 import { protect, isRecruiter } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-/*
- * Apply for a job
- * body: { jobId, candidateId 
+/**
+ * @route   POST /api/applications/apply
+ * @desc    Apply for a job
  */
-// Apply for a job
 router.post("/apply", async (req, res) => {
   try {
     const { jobId, candidateId } = req.body;
@@ -28,11 +28,14 @@ router.post("/apply", async (req, res) => {
   }
 });
 
-// Get all candidates for a job
-router.get("/job/:jobId", async (req, res) => {
+/**
+ * @route   GET /api/applications/job/:jobId
+ * @desc    Get all candidates for a specific JOB
+ */
+router.get("/job/:jobId", protect, isRecruiter, async (req, res) => {
   try {
     const job = await Job.findById(req.params.jobId)
-      .populate("candidates", "name email university degree github about skills");
+      .populate("candidates", "name email university degree github about skills photo"); // ✅ Added photo
 
     if (!job) return res.status(404).json({ message: "Job not found" });
     res.json(job.candidates);
@@ -41,7 +44,30 @@ router.get("/job/:jobId", async (req, res) => {
   }
 });
 
-// Update candidate status (basic, no per-candidate field)
+/**
+ * @route   GET /api/applications/internship/:jobId
+ * @desc    Get all candidates for a specific INTERNSHIP
+ */
+router.get("/internship/:jobId", protect, isRecruiter, async (req, res) => {
+  try {
+    // We use Internship model here
+    const internshipData = await Internship.findById(req.params.jobId)
+      .populate("candidates", "name email university degree github about skills photo"); // ✅ Added photo
+
+    if (!internshipData) {
+      return res.status(404).json({ message: "Internship record not found" });
+    }
+    
+    res.json(internshipData.candidates);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error: " + err.message });
+  }
+});
+
+/**
+ * @route   PUT /api/applications/job/:jobId/candidate/:candidateId/status
+ * @desc    Update candidate status
+ */
 router.put("/job/:jobId/candidate/:candidateId/status", protect, isRecruiter, async (req, res) => {
   try {
     const { status } = req.body;
@@ -51,12 +77,35 @@ router.put("/job/:jobId/candidate/:candidateId/status", protect, isRecruiter, as
     if (!job.candidates.includes(req.params.candidateId))
       return res.status(404).json({ message: "Candidate not found in this job" });
 
-    // You can store statuses separately or create a map if you need that later
     res.json({ message: `Candidate ${req.params.candidateId} marked as ${status}` });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
+/**
+ * @route   PUT /api/applications/internship/:jobId/candidate/:candidateId/status
+ * @desc    Update internship candidate status
+ */
+router.put("/internship/:jobId/candidate/:candidateId/status", protect, isRecruiter, async (req, res) => {
+  try {
+    const { status } = req.body;
+    // We query the Internship model specifically here
+    const internship = await Internship.findById(req.params.jobId);
+
+    if (!internship) return res.status(404).json({ message: "Internship not found" });
+    
+    if (!internship.candidates.includes(req.params.candidateId))
+      return res.status(404).json({ message: "Candidate not found in this internship" });
+
+    // Success response
+    res.json({ 
+      message: `Candidate ${req.params.candidateId} marked as ${status} for Internship`,
+      status 
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 export default router;
