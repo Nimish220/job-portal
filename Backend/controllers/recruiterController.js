@@ -21,13 +21,12 @@ import { Notification } from "../models/Notification.js";
         expiresIn: "1h",
       });
 
-      res.cookie("token", token, {
-  httpOnly: true,
-  // This logic is the "Permanent Fix"
-  secure: process.env.NODE_ENV === "production", 
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
-  maxAge: 1 * 60 * 60 * 1000, 
-});
+        res.cookie("token", token, {
+        httpOnly: true,
+        secure: false, // Set to false for localhost http
+        sameSite: "lax", 
+        maxAge: 1 * 60 * 60 * 1000, 
+      });
 
       res.status(200).json({
         recruiter: {
@@ -596,5 +595,34 @@ export const changePassword = async (req, res) => {
   } catch (error) {
     console.error("Change Password Error:", error);
     res.status(500).json({ success: false, message: "Server error while updating password" });
+  }
+};
+
+// NEW: Notify a specific candidate about shortlisting
+export const notifyApplicant = async (req, res) => {
+  try {
+    const { applicantId, jobId, message } = req.body;
+    const recruiter = req.recruiter;
+
+    if (!applicantId) {
+      return res.status(400).json({ success: false, message: "Applicant ID is required" });
+    }
+
+    const newNotification = new Notification({
+      recipient: applicantId,
+      recipientModel: "User",
+      sender: recruiter._id,
+      senderModel: "Recruiter",
+      type: "application_status", //  MATCHES enum in models/Notification.js
+      message: message || `You have been shortlisted for the next round at ${recruiter.companyName}`,
+      job: jobId,
+      isRead: false 
+    });
+
+    await newNotification.save();
+    res.status(200).json({ success: true, message: "Applicant notified successfully" });
+  } catch (error) {
+    console.error("Error in notifyApplicant:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 };

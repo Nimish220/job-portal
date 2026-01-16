@@ -88,30 +88,33 @@ export const isSeeker = async (req, res, next) => {
 // --- EXISTING PROTECT MIDDLEWARE (KEEPING FOR PRIVATE ROUTES) ---
 export const protect = async (req, res, next) => {
   const token = req.cookies.token;
-  if (!token) return res.status(403).json({ message: "No token provided" });
+  
+  // Change 403 to 401 (Unauthorized) - 403 usually implies you're logged in but banned
+  if (!token) return res.status(401).json({ success: false, message: "No session found" });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Check recruiter first
-    const recruiter = await Recruiter.findById(decoded.id).select("-password");
+    // Try finding in both collections simultaneously to speed up refresh response
+    const [recruiter, user] = await Promise.all([
+      Recruiter.findById(decoded.id).select("-password"),
+      User.findById(decoded.id).select("-password")
+    ]);
+
     if (recruiter) {
       req.user = recruiter;
       req.recruiter = recruiter;
       return next();
     }
 
-    // If needed, check User
-    const user = await User.findById(decoded.id).select("-password");
     if (user) {
       req.user = user;
       return next();
     }
 
-    return res.status(401).json({ message: "User not found" });
+    return res.status(401).json({ message: "User no longer exists" });
   } catch (err) {
-    console.error("JWT error:", err);
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Session expired" });
   }
 };
 

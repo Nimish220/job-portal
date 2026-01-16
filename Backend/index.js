@@ -91,10 +91,10 @@ app.get("/", (req, res) => {
 connectDB()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`✅ Server is listening on port ${PORT}`);
+      console.log(` Server is listening on port ${PORT}`);
     });
   })
   .catch((error) => {
-    console.error("❌ Database Connection Error:", error);
+    console.error(" Database Connection Error:", error);
     process.exit(1);
   });

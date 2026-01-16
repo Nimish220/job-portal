@@ -108,4 +108,28 @@ router.put("/internship/:jobId/candidate/:candidateId/status", protect, isRecrui
   }
 });
 
+/**
+ * @route   GET /api/applications/my-applications
+ * @desc    Get applications for the logged-in user to show "Shortlisted" status
+ */
+router.get("/my-applications", protect, async (req, res) => {
+  try {
+    // Find Jobs where this user's ID is in the candidates array
+    const jobs = await Job.find({ candidates: req.user._id }).select("status title");
+    
+    // Find Internships where this user's ID is in the candidates array
+    const internships = await Internship.find({ candidates: req.user._id }).select("status title");
+
+    // Combine them into one array
+    const allApplications = [...jobs, ...internships];
+
+    res.status(200).json({ 
+      success: true, 
+      appliedJobs: allApplications 
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching applications", error: err.message });
+  }
+});
+
 export default router;

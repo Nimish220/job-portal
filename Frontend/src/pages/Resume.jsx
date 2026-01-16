@@ -1,10 +1,10 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserNavbar from '../components/Header/UserNavbar';
 import Sidebar from '../components/SideBar';
 import { FiMenu } from 'react-icons/fi';
 import NavSearchBar from '../components/Header/NavSearchBar';
-import axios from 'axios'; // Make sure this is at the top if not already
+import axios from 'axios';
 
 const Resume = () => {
   const [pdfs, setPdfs] = useState([]);
@@ -13,7 +13,10 @@ const Resume = () => {
   const [showDropdownIndex, setShowDropdownIndex] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
-  const backend_url = import.meta.env.VITE_BACKEND_URL;
+
+  // ✅ FIXED: Normalize Backend URL with /api prefix
+  const base = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+  const API_BASE = `${base}/api/upload/resume`;
 
   // Helper to add download flag to Cloudinary URL for forced download
   const getDownloadUrl = (fileUrl) => {
@@ -21,18 +24,16 @@ const Resume = () => {
     return fileUrl.replace("/upload/", "/upload/fl_attachment:");
   };
 
-  // Handle showing the modal
   const toggleModal = () => setShowModal(!showModal);
 
-  // Handle file input changes with validation
-  const handleFileChange = (e) => { // file size restriction and docs/pdf only allowed
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const allowedTypes = [
       "application/pdf",
-      "application/msword",                      // .doc
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" // .docx
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ];
 
     const maxSize = 2 * 1024 * 1024; // 2MB
@@ -50,14 +51,16 @@ const Resume = () => {
     setNewPdf({ ...newPdf, file });
   };
 
-  // Fetch resumes list from backend
+  // ✅ FIXED: Fetch resumes using standardized API_BASE
   const fetchResumes = async () => {
     try {
-      const response = await axios.get(backend_url + "/upload/resume", {
+      const response = await axios.get(API_BASE, {
         withCredentials: true,
       });
 
-      const fetchedResumes = response.data.resumes.map(r => ({
+      // Handle the data structure returned by your backend
+      const rawResumes = response.data.resumes || [];
+      const fetchedResumes = rawResumes.map(r => ({
         fileName: r.fileName,
         fileUrl: r.fileUrl,
         publicId: r.publicId,
@@ -69,28 +72,25 @@ const Resume = () => {
     }
   };
 
-  // Initial fetch on component mount only
   useEffect(() => {
     fetchResumes();
   }, []);
 
-  // Handle upload of resume to backend
+  // ✅ FIXED: Handle upload with standardized API_BASE
   const handleUpload = async () => {
     if (newPdf.file) {
       try {
         const formData = new FormData();
         formData.append("resume", newPdf.file);
 
-        await axios.post(backend_url + "/upload/resume", formData, {
+        await axios.post(API_BASE, formData, {
           headers: {
             "Content-Type": "multipart/form-data"
           },
-          withCredentials: true // Required for cookie-based auth
+          withCredentials: true 
         });
 
-        // Refresh the resume list after successful upload
         fetchResumes();
-
         setNewPdf({ fileName: '', file: null });
         toggleModal();
       } catch (error) {
@@ -100,7 +100,7 @@ const Resume = () => {
     }
   };
 
-  // Handle delete resume API call
+  // ✅ FIXED: Handle delete with standardized API_BASE
   const handleDelete = async (index) => {
     const resumeToDelete = pdfs[index];
     const publicId = resumeToDelete.publicId;
@@ -111,7 +111,7 @@ const Resume = () => {
     }
 
     try {
-      await axios.delete(`${backend_url}/upload/resume/${encodeURIComponent(publicId)}`, {
+      await axios.delete(`${API_BASE}/${encodeURIComponent(publicId)}`, {
         withCredentials: true,
       });
 
@@ -123,12 +123,10 @@ const Resume = () => {
     }
   };
 
-  // Toggle Dropdown for download/delete menu
   const toggleDropdown = (index) => {
     setShowDropdownIndex(showDropdownIndex === index ? null : index);
   };
 
-  // Handler for window resize (sidebar responsive)
   useEffect(() => {
     const handleResize = () => setScreenWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
@@ -176,9 +174,6 @@ const Resume = () => {
               className="flex items-center bg-gradient-to-r from-[#5F9D08] to-[#4A8B07] text-white px-5 py-2.5 rounded-lg mt-4 md:mt-0 font-medium shadow-sm hover:shadow-md transition-all duration-300"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -200,7 +195,6 @@ const Resume = () => {
                   className="relative p-5 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
                   whileHover={{ y: -5 }}
                 >
                   <div className="flex items-center">
@@ -209,8 +203,8 @@ const Resume = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-800 truncate max-w-[150px]">{pdfItem.fileName}</p>
+                    <div className="overflow-hidden">
+                      <p className="font-medium text-gray-800 truncate">{pdfItem.fileName || "Resume File"}</p>
                       <p className="text-xs text-gray-500 mt-1">PDF Document</p>
                     </div>
                   </div>
@@ -223,18 +217,18 @@ const Resume = () => {
                       className="text-[#5F9D08] text-sm font-medium hover:underline flex items-center"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                       View
                     </a>
 
                     <button
                       onClick={() => toggleDropdown(index)}
-                      className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
+                      className="p-2 text-gray-500 hover:bg-gray-100 rounded-full"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        <path d="M12 5v.01M12 12v.01M12 19v.01" />
                       </svg>
                     </button>
                   </div>
@@ -242,29 +236,22 @@ const Resume = () => {
                   <AnimatePresence>
                     {showDropdownIndex === index && (
                       <motion.div
-                        className="absolute right-15 top-16 bg-white border rounded-lg shadow-lg z-10 py-1 w-32"
+                        className="absolute right-4 top-16 bg-white border rounded-lg shadow-lg z-10 py-1 w-32"
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
                       >
                         <a
                           href={getDownloadUrl(pdfItem.fileUrl)}
                           download={pdfItem.fileName}
                           className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                          </svg>
                           Download
                         </a>
                         <button
                           onClick={() => handleDelete(index)}
                           className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
                           Delete
                         </button>
                       </motion.div>
@@ -273,114 +260,52 @@ const Resume = () => {
                 </motion.div>
               ))
             ) : (
-              <motion.div
-                className="col-span-full text-center py-16 bg-white rounded-xl shadow-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#5F9D08]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium text-gray-800 mb-2">No resumes uploaded yet</h3>
-                <p className="text-gray-600 mb-6">Upload your resume to apply for jobs more quickly</p>
-                <motion.button
-                  onClick={toggleModal}
-                  className="bg-gradient-to-r from-[#5F9D08] to-[#4A8B07] text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:shadow-md transition-all duration-300 inline-flex items-center"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Upload Resume
-                </motion.button>
-              </motion.div>
+              <div className="col-span-full text-center py-16 bg-white rounded-xl shadow-sm">
+                <p className="text-gray-600">No resumes uploaded yet.</p>
+              </div>
             )}
           </motion.div>
 
-          {/* Modal for Upload */}
           <AnimatePresence>
             {showModal && (
               <motion.div
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm bg-opacity-50 flex justify-center items-center z-50"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50"
                 onClick={toggleModal}
               >
                 <motion.div
                   className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full mx-4"
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  transition={{ type: 'spring', damping: 25 }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-800">Upload Resume</h3>
-                    <button
-                      onClick={toggleModal}
-                      className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                  <h3 className="text-xl font-bold text-gray-800 mb-6">Upload Resume</h3>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#5F9D08]">
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <p className="text-sm text-gray-600">
+                        {newPdf.file ? newPdf.file.name : 'Select or drag and drop your file'}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">PDF, DOC, DOCX up to 2MB</p>
+                    </label>
                   </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Select PDF File</label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#5F9D08] transition-colors duration-200">
-                        <input
-                          type="file"
-                          accept=".pdf,.doc,.docx"
-                          onChange={handleFileChange}
-                          className="hidden"
-                          id="file-upload"
-                        />
-                        <label htmlFor="file-upload" className="cursor-pointer">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                          </svg>
-                          <p className="mt-2 text-sm text-gray-600">
-                            {newPdf.file ? newPdf.file.name : 'Click to select or drag and drop your PDF file'}
-                          </p>
-                          <p className="mt-1 text-xs text-gray-500">PDF files only, max 5MB</p>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="flex justify-end space-x-3 mt-6">
-                    <motion.button
-                      onClick={toggleModal}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Cancel
-                    </motion.button>
-
-                    <motion.button
+                    <button onClick={toggleModal} className="px-4 py-2 text-gray-700">Cancel</button>
+                    <button
                       onClick={handleUpload}
-                      className="bg-gradient-to-r from-[#5F9D08] to-[#4A8B07] text-white px-5 py-2 rounded-lg font-medium shadow-sm hover:shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
                       disabled={!newPdf.file}
+                      className="bg-[#5F9D08] text-white px-5 py-2 rounded-lg disabled:opacity-50"
                     >
-                      Upload Resume
-                    </motion.button>
+                      Upload
+                    </button>
                   </div>
                 </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
-
         </motion.div>
       </div>
     </div>

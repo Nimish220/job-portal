@@ -9,9 +9,9 @@ import useUserStore from '../store/userStore.js';
 
 const EditProfile = () => {
   const navigate = useNavigate();
-  const { user } = useUserStore(); //  Live data from database store
+  // Get 'user' data AND the 'setUser' or 'updateUser' function from your store
+  const { user, setUser } = useUserStore(); 
 
-  //  State keys match your Console Log: 'city', 'experience', 'about'
   const [formData, setFormData] = useState({
     name: '',
     degree: '',
@@ -25,58 +25,66 @@ const EditProfile = () => {
   });
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  //  Step 1: Initialize form using keys exactly as they appear in the Backend Response
-  useEffect(() => {
+    useEffect(() => {
+    //  ONLY set form data if user is NOT null
     if (user) {
       setFormData({
         name: user.name || '',
         degree: user.degree || '',
         university: user.university || '',
         email: user.email || '',
-        city: user.city || '',        // Matches console 'city'
+        city: user.city || '',
         github: user.github || '',
-        skills: user.skills || '',
-        experience: user.experience || '', // Matches console 'experience'
-        about: user.about || ''       // Matches console 'about'
+        // If skills is an array, join it into a string; otherwise use the string
+        skills: Array.isArray(user.skills) ? user.skills.join(', ') : user.skills || '',
+        experience: user.experience || '',
+        about: user.about || ''
       });
     }
-  }, [user]);
+  }, [user]); 
 
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
   };
 
-  //  Step 2: Handle Save with correct mapping & versioned URL
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     
-    // Fallback URL to prevent 'undefined' errors
+    // Ensure the /api prefix is present
     const base = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+    const apiUrl = `${base}/api/users/edit-profile`;
 
     try {
-      //  Sending keys exactly as the backend expects (singular)
-      const res = await fetch(`${base}/users/edit-profile`, {
+      const res = await fetch(apiUrl, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", //  Required for auth session
+        credentials: "include",
         body: JSON.stringify(formData),
       });
 
-      const contentType = res.headers.get("content-type");
-      if (contentType && contentType.indexOf("application/json") !== -1) {
-        const data = await res.json();
-        if (data.success) {
-          navigate("/users/profile"); // Redirect on success
-        } else {
-          alert("Error: " + data.message);
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        // IMPORTANT: Update the global store state so other components update instantly
+        // If your store uses 'updateUser', use that. Usually it's 'setUser' or similar.
+        if (setUser) {
+           setUser(data.user); // Assuming backend returns the updated user object
         }
+        
+        alert("Profile updated successfully!");
+        navigate("/users/profile"); 
       } else {
-        console.error("Non-JSON response. Ensure backend routes use .");
+        alert("Error: " + (data.message || "Failed to update"));
       }
     } catch (error) {
       console.error("Network Error:", error);
+      alert("Network error. Please check if server is running.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -121,10 +129,10 @@ const EditProfile = () => {
             { id: 'name', label: 'Name' },
             { id: 'degree', label: 'Degree' },
             { id: 'university', label: 'University' },
-            { id: 'email', label: 'Email', disabled: true }, //  TASK 2: Security Lock
-            { id: 'city', label: 'Location' },           // Map UI 'Location' to state 'city'
+            { id: 'email', label: 'Email', disabled: true },
+            { id: 'city', label: 'Location' },
             { id: 'skills', label: 'Skills' },
-            { id: 'experience', label: 'Experience' },   // Map UI to state 'experience'
+            { id: 'experience', label: 'Experience' },
             { id: 'github', label: 'GitHub' }
           ].map(field => (
             <div key={field.id}>
@@ -136,7 +144,7 @@ const EditProfile = () => {
                 id={field.id}
                 value={formData[field.id]}
                 onChange={handleChange}
-                disabled={field.disabled || false} // ✅ TASK 2 Implementation
+                disabled={field.disabled || false}
                 placeholder={`Enter your ${field.label.toLowerCase()}`}
                 className={`w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none transition ${
                   field.disabled 
@@ -162,9 +170,10 @@ const EditProfile = () => {
           <div className="sm:col-span-2">
             <button
               type="submit"
-              className="w-full bg-[#5F9D08] hover:bg-[#4e7c07] text-white py-3 rounded-full font-bold transition-colors flex items-center justify-center gap-2"
+              disabled={loading}
+              className={`w-full bg-[#5F9D08] hover:bg-[#4e7c07] text-white py-3 rounded-full font-bold transition-colors flex items-center justify-center gap-2 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <FaSave /> Update Profile
+              <FaSave /> {loading ? "Updating..." : "Update Profile"}
             </button>
           </div>
         </form>

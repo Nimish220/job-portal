@@ -24,6 +24,7 @@ import {
   closeInternship,
   openInternship,
   deleteInternship,
+  notifyApplicant,
   getCandidateProfile,
   changePassword
 } from '../controllers/recruiterController.js';
@@ -56,6 +57,7 @@ router.post('/openJob/:id', protect, isRecruiter, openJob);
 router.get('/myInternships', protect, isRecruiter, getRecruiterInternships);
 router.post('/closeInternship/:id', protect, isRecruiter, closeInternship);
 router.post('/openInternship/:id', protect, isRecruiter, openInternship);
+router.post('/notify-candidate', protect, isRecruiter, notifyApplicant);
 
 // Delete Internship
 router.delete('/deleteInternship/:id', protect, isRecruiter, deleteInternship);

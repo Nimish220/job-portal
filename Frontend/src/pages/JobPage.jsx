@@ -22,27 +22,25 @@ const JobPage = () => {
     const [error, setError] = useState(null);
     
     // ---------------------- ZUSTAND FIX: SELECT ITEMS SAFELY ----------------------
-    // Select action and data separately to avoid creating a new object on every render
     const getAppliedJobs = useUserStore((state) => state.getAppliedJobs);
     const appliedJobs = useUserStore((state) => state.appliedJobs);
     const applyjob = useUserStore((state) => state.applyJob);
     // -------------------------------------------------------------------------------
     
-    const backend_url = import.meta.env.VITE_BACKEND_URL;
+    // Fallback logic to ensure the URL is always valid
+    const base = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+    const backend_url = `${base}/api`;
 
     const isInternship = loc.pathname.includes('/internship/');
     const [isApplied, setIsApplied] = useState(false);
 
     // === 1. Fetch Applied Jobs List & Check Status (SAFE USAGE) ===
     useEffect(() => {
-        // Fetch applied jobs if the list is empty
         if (appliedJobs.length === 0) {
             getAppliedJobs();
         }
         
-        // Check status of the current post whenever the appliedJobs list updates
         if (id && appliedJobs.length > 0) {
-            // Check if the current post ID matches any applied job/internship ID
             const alreadyApplied = appliedJobs.some(post => post._id === id);
             setIsApplied(alreadyApplied);
         }
@@ -50,7 +48,7 @@ const JobPage = () => {
     }, [id, appliedJobs, getAppliedJobs]);
 
 
-    // === 2. API FETCHING LOGIC ===
+    // === 2. API FETCHING LOGIC (UPDATED WITH /API PREFIX) ===
     useEffect(() => {
         const fetchPostDetails = async () => {
             setIsLoading(true);
@@ -59,6 +57,7 @@ const JobPage = () => {
             let apiUrl = '';
             const postType = isInternship ? 'Internship' : 'Job';
 
+            // FIXED: Standardized to use the /api prefix to match backend mounting
             if (isInternship) {
                 apiUrl = `${backend_url}/users/internship/${id}`;
             } else {
@@ -91,7 +90,6 @@ const JobPage = () => {
     }, []);
 
     const handleApplyNow = useCallback(() => {
-        // Navigate to the specific Apply route (ApplyJob.jsx component)
         navigate(isInternship ? `/users/internship/apply/${id}` : `/users/apply/${id}`);
     }, [id, isInternship, navigate]);
 
@@ -156,7 +154,6 @@ const JobPage = () => {
         "Offer"
     ];
 
-    // Determine content based on post type for JSX
     const mainTitle = isInternship ? job.internshipRole : job.jobRole;
     const typeText = isInternship ? job.internshipType : job.jobType;
     const salaryText = isInternship 
@@ -171,12 +168,10 @@ const JobPage = () => {
                 toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
                 showHamburger={true}
             />
-            {/* Sidebar for large screens */}
             <div className="hidden lg:block mt-20 fixed top-0 left-0 min-h-screen">
                 <Sidebar isOpen={true} isMobile={false} />
             </div>
 
-            {/* Sidebar for small screens (AnimatePresence handles mount/unmount) */}
             <AnimatePresence>
                 {isSidebarOpen && (
                     <Sidebar
@@ -200,19 +195,15 @@ const JobPage = () => {
                     transition={{ duration: 0.4 }}
                     className="flex flex-col md:flex-row items-start md:items-center gap-4 p-6 mb-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
                 >
-                    {/* Company Logo */}
                     <div className="flex-shrink-0 w-20 h-20 flex items-center justify-center bg-white rounded-lg shadow-sm">
                         <img src={amazonLogo} alt={`${job.recruiter?.companyName || 'Company'} Logo`} className="w-16 h-16 object-contain" />
                     </div>
 
-                    {/* Post Info */}
                     <div className="flex-grow flex flex-col gap-1">
                         <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{mainTitle}</h2>
                         <p className="text-[#5F9D08] font-medium text-base sm:text-lg">{job.recruiter?.companyName || job.recruiter?.email}</p>
 
-                        {/* Post Meta */}
                         <div className="flex flex-wrap items-center gap-4 mt-2">
-                            {/* Location */}
                             <span className="inline-flex items-center text-sm text-gray-600">
                                 <svg className="w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -221,7 +212,6 @@ const JobPage = () => {
                                 {job.location}
                             </span>
 
-                            {/* Type */}
                             <span className="inline-flex items-center text-sm text-gray-600">
                                 <svg className="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M12 18h.01" />
@@ -229,7 +219,6 @@ const JobPage = () => {
                                 {typeText}
                             </span>
 
-                            {/* CTC/Stipend */}
                             <span className="inline-flex items-center text-sm text-gray-600">
                                 <svg className="w-4 h-4 mr-1 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -239,9 +228,8 @@ const JobPage = () => {
                         </div>
                     </div>
 
-                    {/* Apply Button (Uses calculated isApplied state) */}
                     <motion.button
-                        onClick={isApplied ? () => navigate('/users/dashboard') : handleApplyNow} // Navigate elsewhere if already applied
+                        onClick={isApplied ? () => navigate('/users/dashboard') : handleApplyNow} 
                         disabled={isApplied}
                         className={`w-full md:w-auto mt-4 md:mt-0 px-6 py-3 text-sm font-medium text-white rounded-lg transition-colors hover:shadow-lg ${
                             isApplied
@@ -347,10 +335,8 @@ const JobPage = () => {
                         <h3 className="font-bold text-xl text-gray-800 border-l-4 border-[#5F9D08] pl-3">Hiring Workflow</h3>
                         <div className="mt-6 px-4">
                             <div className="relative">
-                                {/* Connecting line */}
                                 <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gray-200 transform -translate-x-1/2 z-0"></div>
 
-                                {/* Steps */}
                                 {workflowSteps.map((step, index) => (
                                     <div key={index} className="relative z-10 flex items-center mb-8">
                                         <div className="flex-1 flex justify-end pr-4 md:pr-12">
@@ -422,10 +408,9 @@ const JobPage = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-medium text-gray-800">Skills</h4>
-                                        <p className="text-gray-600 text-sm mt-1">Proficiency in required technical skills as mentioned in the {isInternship ? 'internship' : 'job'} description</p>
+                                        <p className="text-gray-600 text-sm mt-1">Proficiency in required technical skills as mentioned in the description</p>
                                     </div>
                                 </div>
-
                                 <div className="flex items-start">
                                     <div className="bg-[#5F9D08] rounded-full p-1 mr-3 mt-1">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -442,12 +427,6 @@ const JobPage = () => {
                     </motion.div>
                 )}
 
-                {/* Application Form Modal */}
-                <AnimatePresence>
-                    {/* NOTE: If you are using the separate ApplyJob page, this modal code block is redundant and should be removed. */}
-                </AnimatePresence>
-
-                {/* Toast Notifications */}
                 <ToastContainer />
             </motion.div>
         </div>

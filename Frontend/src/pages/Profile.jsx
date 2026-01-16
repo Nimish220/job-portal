@@ -9,8 +9,10 @@ import { FaLinkedin, FaTwitter, FaGlobe } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import NavSearchBar from '../components/Header/NavSearchBar';
 import axios from 'axios';
+import useUserStore from '../store/userStore.js';
 
 const Profile = () => {
+  const { setUser } = useUserStore(); 
   const [profileData, setProfileData] = useState({
     name: '',
     degree: '',
@@ -21,10 +23,11 @@ const Profile = () => {
     about: '',
     skills: [],
     profilePhoto: null,
-    experience: ''
+    experience: '',
+    currentStatus: 'Pending' 
   });
 
-  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isEditingSkills, setIsEditingSkills] = useState(false);
   const [editedSkills, setEditedSkills] = useState([]);
   const [isEditingAbout, setIsEditingAbout] = useState(false);
@@ -32,31 +35,54 @@ const Profile = () => {
   const [isEditingExperience, setIsEditingExperience] = useState(false);
   const [editedExperience, setEditedExperience] = useState('');
 
-  const backend_url = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+  const base = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+  const backend_url = `${base}/api`; 
 
-  //  FIXED: Corrected API path and Data Mapping
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchAllData = async () => {
       try {
-        const res = await axios.get(`${backend_url}/users/profile`, {
+        setLoading(true);
+        
+        // 1. Fetch Profile Data
+        const profileRes = await axios.get(`${backend_url}/users/profile`, {
           withCredentials: true 
         });
 
-        const data = res.data;
-        if (data.success && data.user) {
-          const user = data.user;
-          setProfileData({
+        if (profileRes.data.success && profileRes.data.user) {
+          const user = profileRes.data.user;
+          
+          // 2. Fetch Application Status safely
+          // NOTE: If this still gives 404, check your applicationRoutes.js for the correct "GET" path
+          let latestStatus = "Pending";
+          try {
+            // Updated to common route naming convention; check your backend!
+            const appRes = await axios.get(`${backend_url}/applications/my-applications`, { 
+              withCredentials: true 
+            });
+            if (appRes.data.success && appRes.data.applications?.length > 0) {
+              latestStatus = appRes.data.applications[0].status;
+            }
+          } catch (appErr) {
+            console.warn("Application status route not found or unreachable.");
+          }
+
+          const updatedData = {
+            ...user,
             name: user.name || '',
             degree: user.degree || '',
             university: user.university || '',
             email: user.email || '',
-            city: user.city || '', //  Matches your console log
+            city: user.city || '', 
             github: user.github || '',
             about: user.about || '',
             skills: user.skills || [],
             profilePhoto: user.profilePhoto || null,
-            experience: user.experience || '', //  Matches your console log
-          });
+            experience: user.experience || '',
+            currentStatus: latestStatus 
+          };
+
+          setProfileData(updatedData);
+          if (setUser) setUser(user);
 
           setEditedAbout(user.about || '');
           setEditedExperience(user.experience || '');
@@ -64,72 +90,46 @@ const Profile = () => {
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchProfile();
-  }, [backend_url]);
+    fetchAllData();
+  }, [backend_url, setUser]);
 
-  const handlePhotoUpload = (e) => {
-    setProfilePhoto(URL.createObjectURL(e.target.files[0]));
-  };
-
-  const handleSkillsEdit = () => {
-    setIsEditingSkills(true);
-    setEditedSkills(profileData.skills);
-  };
-
-  const handleSkillsSave = async () => {
+  const updateProfileField = async (payload, setEditMode) => {
     try {
-      const res = await axios.put(`${backend_url}/users/edit-profile`,
-        { skills: editedSkills },
-        { withCredentials: true }
-      );
+      const res = await axios.put(`${backend_url}/users/edit-profile`, payload, {
+        withCredentials: true
+      });
       if (res.data.success) {
-        setProfileData(prev => ({ ...prev, skills: editedSkills }));
-        setIsEditingSkills(false);
+        setProfileData(prev => ({ ...prev, ...payload }));
+        if (setUser && res.data.user) setUser(res.data.user);
+        setEditMode(false);
+        alert("Updated successfully!");
       }
     } catch (err) {
-      console.error("handleSkillsSave Error:", err);
+      console.error("Update Error:", err);
+      alert("Failed to update field.");
     }
   };
 
-  const handleExperienceSave = async () => {
-    try {
-      const res = await axios.put(`${backend_url}/users/edit-profile`,
-        { experience: editedExperience },
-        { withCredentials: true }
-      );
-      if (res.data.success) {
-        setProfileData(prev => ({ ...prev, experience: editedExperience }));
-        setIsEditingExperience(false);
-      }
-    } catch (err) {
-      console.error("Failed to save experience:", err);
-    }
-  };
+  const handleSkillsSave = () => updateProfileField({ skills: editedSkills }, setIsEditingSkills);
+  const handleExperienceSave = () => updateProfileField({ experience: editedExperience }, setIsEditingExperience);
+  const handleAboutSave = () => updateProfileField({ about: editedAbout }, setIsEditingAbout);
 
-  const handleAboutSave = async () => {
-    try {
-      const res = await axios.put(`${backend_url}/users/edit-profile`,
-        { about: editedAbout },
-        { withCredentials: true }
-      );
-      if (res.data.success) {
-        setProfileData(prev => ({ ...prev, about: editedAbout }));
-        setIsEditingAbout(false);
-      }
-    } catch (err) {
-      console.error("Failed to save about:", err);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#5F9D08]"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-green-50 font-sans">
-      <NavSearchBar
-        toggleSidebar={() => {}}
-        showHamburger={true}
-      />
+      <NavSearchBar toggleSidebar={() => {}} showHamburger={true} />
 
       <motion.div
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-20"
@@ -149,11 +149,11 @@ const Profile = () => {
             <div className="bg-white rounded-3xl shadow-lg">
               <div className="bg-gradient-to-r from-[#5F9D08] to-[#4A8B07] h-32 rounded-t-3xl relative">
                 <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
-                  <div className="w-28 h-28 rounded-full border-4 border-white bg-gray-100 overflow-hidden">
-                    {profilePhoto ? (
-                      <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                  <div className="w-28 h-28 rounded-full border-4 border-white bg-gray-100 overflow-hidden flex items-center justify-center">
+                    {profileData.profilePhoto ? (
+                      <img src={profileData.profilePhoto} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="flex items-center justify-center h-full text-2xl text-[#5F9D08] font-bold">
+                      <div className="text-2xl text-[#5F9D08] font-bold">
                         {profileData.name ? profileData.name.split(' ').map(n => n[0]).join('') : 'U'}
                       </div>
                     )}
@@ -163,23 +163,33 @@ const Profile = () => {
 
               <div className="pt-20 pb-6 px-6 text-center">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-1">{profileData.name}</h2>
-                <p className="text-[#5F9D08] font-medium text-sm">{profileData.degree}</p>
-                <p className="text-gray-500 text-sm mt-1">{profileData.university}</p>
+                
+                {/* ✅ Shortlist Status Badge */}
+                <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-3 ${
+                  profileData.currentStatus === 'Accepted' 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {profileData.currentStatus === 'Accepted' ? 'Shortlisted' : 'Application Pending'}
+                </div>
+
+                <p className="text-[#5F9D08] font-medium text-sm">{profileData.degree || "No Degree Listed"}</p>
+                <p className="text-gray-500 text-sm mt-1">{profileData.university || "No University Listed"}</p>
 
                 <div className="mt-6 bg-gray-100 p-4 rounded-xl text-left space-y-4">
                   <div className="flex items-center space-x-3 text-gray-600">
-                    <FiMail /> <span className="text-sm">{profileData.email}</span>
+                    <FiMail /> <span className="text-sm truncate">{profileData.email}</span>
                   </div>
                   <div className="flex items-center space-x-3 text-gray-600">
-                    <FiMapPin /> <span className="text-sm">{profileData.city}</span>
+                    <FiMapPin /> <span className="text-sm">{profileData.city || "Add Location"}</span>
                   </div>
                   <div className="flex items-center space-x-3 text-gray-600">
-                    <FiGithub /> <span className="text-sm truncate">{profileData.github}</span>
+                    <FiGithub /> <span className="text-sm truncate">{profileData.github || "Add GitHub"}</span>
                   </div>
                 </div>
 
                 <nav className="mt-6 space-y-2">
-                  <Link to='/users/edit-profile' className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100 rounded-lg">
+                  <Link to='/users/edit-profile' className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100 rounded-lg transition">
                     <FiUser className="mr-2 text-[#5F9D08]" /> Edit Profile
                   </Link>
                 </nav>
@@ -191,37 +201,42 @@ const Profile = () => {
           <div className="flex-1">
             <Section title="About Me" icon={FiEdit} isEditing={isEditingAbout} onEdit={() => setIsEditingAbout(true)} onSave={handleAboutSave}>
               {isEditingAbout ? (
-                <textarea className="w-full p-2 border rounded text-gray-700" rows={4} value={editedAbout} onChange={(e) => setEditedAbout(e.target.value)} />
+                <textarea className="w-full p-2 border rounded text-gray-700 focus:ring-2 focus:ring-[#5F9D08] outline-none" rows={4} value={editedAbout} onChange={(e) => setEditedAbout(e.target.value)} />
               ) : (
-                <p className="text-gray-700 leading-relaxed">{profileData.about || "No info provided."}</p>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line">{profileData.about || "No info provided."}</p>
               )}
             </Section>
 
-            <Section title="Skills" icon={FiEdit} isEditing={isEditingSkills} onEdit={handleSkillsEdit} onSave={handleSkillsSave}>
+            <Section title="Skills" icon={FiEdit} isEditing={isEditingSkills} onEdit={() => setIsEditingSkills(true)} onSave={handleSkillsSave}>
               <div className="flex flex-wrap gap-3">
                 {isEditingSkills ? (
-                  editedSkills.map((skill, index) => (
-                    <input key={index} value={skill} onChange={(e) => {
-                      const updated = [...editedSkills];
-                      updated[index] = e.target.value;
-                      setEditedSkills(updated);
-                    }} className="border px-2 py-1 rounded-full text-sm w-24" />
-                  ))
+                  <div className="w-full flex flex-col gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Enter skills separated by commas"
+                      className="border p-2 rounded w-full"
+                      value={Array.isArray(editedSkills) ? editedSkills.join(', ') : ''} 
+                      onChange={(e) => setEditedSkills(e.target.value.split(',').map(s => s.trim()))}
+                    />
+                    <p className="text-xs text-gray-500">Example: React, Node, CSS</p>
+                  </div>
                 ) : (
-                  profileData.skills.map((skill, i) => (
-                    <span key={i} className="bg-green-100 text-[#5F9D08] px-3 py-1 rounded-full text-sm font-medium">
-                      {skill}
-                    </span>
-                  ))
+                  profileData.skills.length > 0 ? (
+                    profileData.skills.map((skill, i) => (
+                      <span key={i} className="bg-green-100 text-[#5F9D08] px-3 py-1 rounded-full text-sm font-medium">
+                        {skill}
+                      </span>
+                    ))
+                  ) : <span className="text-gray-400">No skills added.</span>
                 )}
               </div>
             </Section>
 
             <Section title="Experience" icon={FiEdit} isEditing={isEditingExperience} onEdit={() => setIsEditingExperience(true)} onSave={handleExperienceSave}>
               {isEditingExperience ? (
-                <textarea className="w-full p-2 border rounded text-gray-700" rows={4} value={editedExperience} onChange={(e) => setEditedExperience(e.target.value)} />
+                <textarea className="w-full p-2 border rounded text-gray-700 focus:ring-2 focus:ring-[#5F9D08] outline-none" rows={4} value={editedExperience} onChange={(e) => setEditedExperience(e.target.value)} />
               ) : (
-                <p className="text-gray-700">{profileData.experience || "No experience added yet."}</p>
+                <p className="text-gray-700 whitespace-pre-line">{profileData.experience || "No experience added yet."}</p>
               )}
             </Section>
           </div>
@@ -236,9 +251,9 @@ const Section = ({ title, icon: Icon, children, isEditing, onEdit, onSave }) => 
     <div className="flex justify-between items-center mb-4">
       <h2 className="text-xl font-semibold text-gray-800 border-l-4 border-[#5F9D08] pl-4">{title}</h2>
       {isEditing ? (
-        <button onClick={onSave} className="text-white bg-[#5F9D08] px-3 py-1 rounded-full text-sm">Save</button>
+        <button onClick={onSave} className="text-white bg-[#5F9D08] px-4 py-1 rounded-full text-sm font-bold hover:bg-[#4e7c07] transition">Save</button>
       ) : (
-        <button onClick={onEdit} className="text-[#5F9D08] p-2 hover:bg-green-100 rounded-full"><Icon /></button>
+        <button onClick={onEdit} className="text-[#5F9D08] p-2 hover:bg-green-100 rounded-full transition"><Icon /></button>
       )}
     </div>
     <div className="bg-gray-50 p-4 rounded-xl">{children}</div>

@@ -20,7 +20,7 @@ const NotificationsPage = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${backend_url}/users/notifications`, {
+      const res = await axios.get(`${backend_url}/api/users/notifications`, {
         withCredentials: true,
       });
       setNotifications(res.data.notifications || []);
@@ -36,7 +36,7 @@ const NotificationsPage = () => {
   const markAsRead = async (id) => {
     try {
       await axios.patch(
-        `${backend_url}/users/notifications/${id}/read`,
+        `${backend_url}/api/users/notifications/${id}/read`,
         {},
         { withCredentials: true }
       );
@@ -51,7 +51,7 @@ const NotificationsPage = () => {
   // ✅ Delete single notification
   const deleteNotification = async (id) => {
     try {
-      await axios.delete(`${backend_url}/users/notifications/${id}`, {
+      await axios.delete(`${backend_url}/api/users/notifications/${id}`, {
         withCredentials: true,
       });
       setNotifications((prev) => prev.filter((n) => n._id !== id));
@@ -67,7 +67,7 @@ const NotificationsPage = () => {
         notifications
           .filter((n) => !n.isRead)
           .map((n) =>
-            axios.patch(`${backend_url}/users/notifications/${n._id}/read`, {}, { withCredentials: true })
+            axios.patch(`${backend_url}/api/users/notifications/${n._id}/read`, {}, { withCredentials: true })
           )
       );
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
@@ -82,7 +82,7 @@ const NotificationsPage = () => {
     try {
       await Promise.all(
         notifications.map((n) =>
-          axios.delete(`${backend_url}/users/notifications/${n._id}`, { withCredentials: true })
+          axios.delete(`${backend_url}/api/users/notifications/${n._id}`, { withCredentials: true })
         )
       );
       setNotifications([]);

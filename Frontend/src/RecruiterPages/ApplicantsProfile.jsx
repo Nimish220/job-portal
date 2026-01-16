@@ -85,9 +85,11 @@ const ApplicantsProfile = () => {
     if (applicantId && jobId) fetchApplicantData();
   }, [applicantId, jobId, location.pathname]);
 
-  const handleNotify = async () => {
+  // ApplicantsProfile.jsx -> handleNotify function update
+const handleNotify = async () => {
     try {
-      const res = await axios.put(
+      // 1. Update the Application Status (Existing logic)
+      await axios.put(
         getStatusUpdateUrl(),
         {
           status: "Accepted",
@@ -95,13 +97,22 @@ const ApplicantsProfile = () => {
         },
         { withCredentials: true }
       );
+
+      // 2. Create the Notification for the Seeker
+      // ensure you are sending 'applicantId' and 'jobId' exactly as the controller expects
+      await axios.post(`${backend_url}/api/recruiters/notify-candidate`, {
+        applicantId: applicantId, // from useParams
+        jobId: jobId,             // from useParams
+        message: roundDetails || `Congratulations! You have been shortlisted for the next round by ${userName}.`
+      }, { withCredentials: true });
+
       setProfile((prev) => ({ ...prev, status: "Accepted" }));
-      toast.success("Applicant notified successfully!");
+      toast.success("Applicant notified and status updated!");
     } catch (err) {
       console.error("Error notifying applicant:", err);
       toast.error(err.response?.data?.message || "Failed to notify applicant");
     }
-  };
+};
 
   const handleReject = async () => {
     try {
