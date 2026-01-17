@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiCheckCircle, FiXCircle, FiTrash2, FiCheckSquare } from "react-icons/fi";
+import { FiCheckCircle, FiXCircle, FiTrash2, FiCheckSquare,FiRefreshCw } from "react-icons/fi";
 
 import NavSearchBar from "../components/Header/NavSearchBar";
 import Sidebar from "../components/SideBar";
@@ -128,30 +128,41 @@ const NotificationsPage = () => {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-6 md:p-12">
             {/* Header */}
-            <div className="border-b pb-4 mb-4 border-gray-200 flex justify-between items-center">
-              <h1 className="text-2xl font-semibold text-gray-800">Notifications</h1>
-              <div className="flex space-x-4">
-                <button onClick={fetchNotifications} className="text-sm text-[#5F9D08] bg-green-200 rounded-full cursor-pointer hover:underline">
-                  Refresh
-                </button>
-                {notifications.length > 0 && (
-                  <>
-                    <button
-                      onClick={markAllAsRead}
-                      className="flex items-center gap-1 text-sm text-blue-600 hover:underline"
+              <div className="border-b pb-4 mb-4 border-gray-200 flex justify-between items-center">
+                <h1 className="text-2xl font-semibold text-gray-800">Notifications</h1>
+                <div className="flex space-x-4">
+                  {/* Updated Refresh Button with Icon */}
+                  <button 
+                    onClick={fetchNotifications} 
+                    className="flex items-center gap-1 text-sm text-[#5F9D08] hover:underline"
+                  >
+                    <motion.div
+                      animate={loading ? { rotate: 360 } : { rotate: 0 }}
+                      transition={{ repeat: loading ? Infinity : 0, duration: 1, ease: "linear" }}
                     >
-                      <FiCheckSquare /> Mark all read
-                    </button>
-                    <button
-                      onClick={deleteAll}
-                      className="flex items-center gap-1 text-sm text-red-600 hover:underline"
-                    >
-                      <FiTrash2 /> Delete all
-                    </button>
-                  </>
-                )}
+                      <FiRefreshCw />
+                    </motion.div>
+                    Refresh
+                  </button>
+
+                  {notifications.length > 0 && (
+                    <>
+                      <button
+                        onClick={markAllAsRead}
+                        className="flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                      >
+                        <FiCheckSquare /> Mark all read
+                      </button>
+                      <button
+                        onClick={deleteAll}
+                        className="flex items-center gap-1 text-sm text-red-600 hover:underline"
+                      >
+                        <FiTrash2 /> Delete all
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
 
             {/* Content */}
             {loading ? (
