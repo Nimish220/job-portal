@@ -12,6 +12,7 @@ const JobCard = ({
   eligibilityCriteria,
   opened,
   status,
+  applicantCount,
   actionButtonText,
   secondaryButtonText,
   actionButtonLink,
@@ -76,28 +77,47 @@ const JobCard = ({
       </div>
 
       {/* Right Section */}
-      <div className="flex flex-col justify-between items-start sm:items-end text-sm gap-3 w-full sm:w-auto">
-        <p className="text-gray-500 text-xs">
-          Made Active: {new Date(opened).toLocaleDateString()}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {actionButtonLink && (
-            // <Link to={actionButtonLink}>
-              <button onClick={actionButtonLink} className="bg-[#5F9D08] hover:bg-[#4b7b06] text-white px-4 py-2 rounded-md transition-colors text-xs sm:text-sm cursor-pointer">
-                {actionButtonText}
-              </button>
-            // </Link>
-          )}
-          {secondaryButtonText && (
-            <button
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md text-xs sm:text-sm transition cursor-pointer"
-              onClick={onSecondaryButtonClick}
-            >
-              {secondaryButtonText}
-            </button>
-          )}
-        </div>
-      </div>
+<div className="flex flex-col justify-end items-end text-sm gap-4 w-full sm:w-auto">
+  {/* Positioned at the very top right of the section */}
+  <p className="text-gray-400 text-[11px] font-semibold uppercase tracking-wider">
+    Post Date: {new Date(opened).toLocaleDateString()}
+  </p>
+
+  <div className="flex flex-row items-center gap-3">
+    {/* ✅ Enhanced Applicant Badge */}
+    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border shadow-sm transition-all ${
+      applicantCount > 0 
+        ? "bg-blue-50 border-blue-200 text-blue-700" 
+        : "bg-gray-50 border-gray-200 text-gray-400"
+    }`}>
+      <span className="text-lg font-bold leading-none">{applicantCount}</span>
+      <span className="text-[10px] uppercase font-bold leading-none tracking-tighter">
+        {applicantCount === 1 ? "Applicant" : "Applicants"}
+      </span>
+    </div>
+
+    {/* Buttons Container */}
+    <div className="flex items-center gap-2">
+      {actionButtonLink && (
+        <button 
+          onClick={actionButtonLink} 
+          className="bg-[#5F9D08] hover:bg-[#4b7b06] text-white px-5 py-2 rounded-md transition-all text-xs font-bold shadow-sm active:scale-95 cursor-pointer whitespace-nowrap"
+        >
+          {actionButtonText}
+        </button>
+      )}
+
+      {secondaryButtonText && (
+        <button
+          onClick={onSecondaryButtonClick}
+          className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-600 px-4 py-2 rounded-md text-xs font-medium transition active:scale-95 cursor-pointer whitespace-nowrap"
+        >
+          {secondaryButtonText}
+        </button>
+      )}
+    </div>
+  </div>
+</div>
     </motion.div>
   );
 };

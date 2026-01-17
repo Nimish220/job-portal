@@ -126,6 +126,7 @@ function JobPage() {
   // ✅ Normalize for JobCard
   const normalize = (item, type) => ({
     jobTitle: item.jobRole || item.internshipRole || "Not specified",
+    applicantCount: item.candidates?.length || item.applicants?.length || 0,
     location: item.location || "Remote / Not specified",
     salaryRange: type === "job" 
       ? item.ctc || "Not specified" 
