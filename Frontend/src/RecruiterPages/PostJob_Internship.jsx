@@ -79,7 +79,7 @@ function PostJob_Internship() {
   useEffect(()=>{
     const fetchProfile = async () => {
           try {
-            const res = await axios.get(backend_url+'/recruiters/getProfile', {
+            const res = await axios.get(backend_url+'/api/recruiters/getProfile', {
               withCredentials: true
             });
             setUserName(res.data.recruiter.companyName);

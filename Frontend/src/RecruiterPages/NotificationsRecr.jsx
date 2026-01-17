@@ -4,7 +4,7 @@ import Sidebar from "../components/SideBar_Recr";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { AnimatePresence, motion } from "framer-motion";
-import { FiMenu, FiCheckCircle, FiXCircle, FiTrash2, FiCheckSquare } from "react-icons/fi";
+import { FiMenu, FiCheckCircle, FiXCircle, FiTrash2, FiCheckSquare, FiRefreshCw} from "react-icons/fi";
 import { FaHome } from "react-icons/fa";
 
 import ProfileImage from "../assets/images/Profile_pics/1.jpg";
@@ -19,11 +19,11 @@ export default function NotificationsRecr() {
   const backend_url = import.meta.env.VITE_BACKEND_URL;
   const isMobile = screenWidth < 768;
 
-  // ✅ Fetch recruiter profile (for top nav)
+  //  Fetch recruiter profile (for top nav)
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`${backend_url}/recruiters/getProfile`, {
+        const res = await axios.get(`${backend_url}/api/recruiters/getProfile`, {
           withCredentials: true,
         });
         setUserName(res.data.recruiter.companyName);
@@ -34,11 +34,11 @@ export default function NotificationsRecr() {
     fetchProfile();
   }, [backend_url]);
 
-  // ✅ Fetch recruiter notifications
+  //  Fetch recruiter notifications
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${backend_url}/recruiters/notifications`, {
+      const res = await axios.get(`${backend_url}/api/recruiters/notifications`, {
         withCredentials: true,
       });
       setNotifications(res.data.notifications || []);
@@ -50,20 +50,20 @@ export default function NotificationsRecr() {
     }
   };
 
-  // ✅ Mark single notification as read
+  //  Mark single notification as read
   const markAsRead = async (id) => {
     try {
-      await axios.patch(`${backend_url}/recruiters/notifications/${id}/read`, {}, { withCredentials: true });
+      await axios.patch(`${backend_url}/api/recruiters/notifications/${id}/read`, {}, { withCredentials: true });
       setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
     } catch {
       toast.error("Failed to mark as read");
     }
   };
 
-  // ✅ Delete single notification
+  //  Delete single notification
   const deleteNotification = async (id) => {
     try {
-      await axios.delete(`${backend_url}/recruiters/notifications/${id}`, {
+      await axios.delete(`${backend_url}/api/recruiters/notifications/${id}`, {
         withCredentials: true,
       });
       setNotifications((prev) => prev.filter((n) => n._id !== id));
@@ -72,14 +72,14 @@ export default function NotificationsRecr() {
     }
   };
 
-  // ✅ Bulk: Mark all as read
+  //  Bulk: Mark all as read
   const markAllAsRead = async () => {
     try {
       await Promise.all(
         notifications
           .filter((n) => !n.isRead)
           .map((n) =>
-            axios.patch(`${backend_url}/recruiters/notifications/${n._id}/read`, {}, { withCredentials: true })
+            axios.patch(`${backend_url}/api/recruiters/notifications/${n._id}/read`, {}, { withCredentials: true })
           )
       );
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
@@ -89,12 +89,12 @@ export default function NotificationsRecr() {
     }
   };
 
-  // ✅ Bulk: Delete all
+  //  Bulk: Delete all
   const deleteAll = async () => {
     try {
       await Promise.all(
         notifications.map((n) =>
-          axios.delete(`${backend_url}/recruiters/notifications/${n._id}`, { withCredentials: true })
+          axios.delete(`${backend_url}/api/recruiters/notifications/${n._id}`, { withCredentials: true })
         )
       );
       setNotifications([]);
@@ -167,30 +167,41 @@ export default function NotificationsRecr() {
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6 md:p-12">
               {/* Header */}
-              <div className="border-b pb-4 mb-4 border-gray-200 flex justify-between items-center">
-                <h1 className="text-2xl font-semibold text-gray-800">Notifications</h1>
-                <div className="flex space-x-4">
-                  <button onClick={fetchNotifications} className="text-sm text-[#5F9D08] bg-green-200 p-2 rounded-full cursor-pointer hover:underline">
-                    Refresh
-                  </button>
-                  {notifications.length > 0 && (
-                    <>
-                      <button
-                        onClick={markAllAsRead}
-                        className="flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                <div className="border-b pb-4 mb-4 border-gray-200 flex justify-between items-center">
+                  <h1 className="text-2xl font-semibold text-gray-800">Notifications</h1>
+                  <div className="flex space-x-4">
+                    {/*  Animated Refresh Button */}
+                    <button 
+                      onClick={fetchNotifications} 
+                      className="flex items-center gap-1 text-sm text-[#5F9D08] hover:underline cursor-pointer"
+                    >
+                      <motion.div
+                        animate={loading ? { rotate: 360 } : { rotate: 0 }}
+                        transition={{ repeat: loading ? Infinity : 0, duration: 1, ease: "linear" }}
                       >
-                        <FiCheckSquare /> Mark all read
-                      </button>
-                      <button
-                        onClick={deleteAll}
-                        className="flex items-center gap-1 text-sm text-red-600 hover:underline"
-                      >
-                        <FiTrash2 /> Delete all
-                      </button>
-                    </>
-                  )}
+                        <FiRefreshCw />
+                      </motion.div>
+                      Refresh
+                    </button>
+
+                    {notifications.length > 0 && (
+                      <>
+                        <button
+                          onClick={markAllAsRead}
+                          className="flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                        >
+                          <FiCheckSquare /> Mark all read
+                        </button>
+                        <button
+                          onClick={deleteAll}
+                          className="flex items-center gap-1 text-sm text-red-600 hover:underline"
+                        >
+                          <FiTrash2 /> Delete all
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
 
               {/* Notifications List */}
               {loading ? (
