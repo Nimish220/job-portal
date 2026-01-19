@@ -1,4 +1,5 @@
   import { Recruiter } from "../models/Recruiter.js";
+  import cloudinary from "../config/cloudinaryConfig.js";
   import bcrypt from "bcryptjs";
   import jwt from "jsonwebtoken";
   import { Job } from "../models/Job.js";
@@ -42,48 +43,83 @@ import { Notification } from "../models/Notification.js";
     }
   };
 
-  // REGISTER RECRUITER
-  export const registerRecruiter = async (req, res) => {
-    try {
-      const { email, phone, password, companyName } = req.body;
-      const existingRecruiter = await Recruiter.findOne({ email });
-      if (existingRecruiter)
-        return res.status(400).json({ message: "Recruiter already exists" });
+  // --- NEW HELPER FUNCTION ---
+const uploadToCloudinary = (fileBuffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "recruiter_docs", resource_type: "auto" },
+      (error, result) => {
+        if (result) resolve(result.secure_url);
+        else reject(error);
+      }
+    );
+    stream.end(fileBuffer);
+  });
+};
 
-      if (!req.file || !req.file.path)
-        return res
-          .status(400)
-          .json({ message: "PAN or GST document is required" });
+// REGISTER RECRUITER (Updated for Buffer)
+export const registerRecruiter = async (req, res) => {
+  try {
+    const { email, phone, password, companyName } = req.body;
+    const existingRecruiter = await Recruiter.findOne({ email });
+    if (existingRecruiter)
+      return res.status(400).json({ message: "Recruiter already exists" });
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+    if (!req.file || !req.file.buffer)
+      return res.status(400).json({ message: "PAN or GST document is required" });
 
-      const newRecruiter = new Recruiter({
-        email,
-        phone,
-        password: hashedPassword,
-        companyName,
-        companyPanCardOrGstFile: req.file.path,
-      });
+    // Upload buffer to Cloudinary
+    const fileUrl = await uploadToCloudinary(req.file.buffer);
 
-      await newRecruiter.save();
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-      res.status(201).json({
-        success: true,
-        message: "Recruiter registered successfully",
-        recruiter: {
-          id: newRecruiter._id,
-          email: newRecruiter.email,
-          companyName: newRecruiter.companyName,
-          status: newRecruiter.status,
-        },
-      });
-    } catch (error) {
-      console.error("Register Error:", error);
-      res
-        .status(500)
-        .json({ message: "Server error during registration", error });
+    const newRecruiter = new Recruiter({
+      email,
+      phone,
+      password: hashedPassword,
+      companyName,
+      companyPanCardOrGstFile: fileUrl, // Save the URL from Cloudinary
+    });
+
+    await newRecruiter.save();
+    res.status(201).json({ success: true, message: "Registered successfully" });
+  } catch (error) {
+    console.error("Register Error:", error);
+    res.status(500).json({ message: "Registration failed", error: error.message });
+  }
+};
+
+// UPDATE RECRUITER PROFILE (Updated for Buffer)
+export const updateRecruiterProfile = async (req, res) => {
+  try {
+    if (!req.recruiter) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-  };
+
+    const updates = { ...req.body };
+
+    if (req.file && req.file.buffer) {
+      // Use helper to upload the buffer logged in your terminal
+      const uploadedUrl = await uploadToCloudinary(req.file.buffer);
+      updates.companyPanCardOrGstFile = uploadedUrl;
+    }
+
+    const updatedRecruiter = await Recruiter.findByIdAndUpdate(
+      req.recruiter._id,
+      updates,
+      { new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      recruiter: updatedRecruiter,
+      message: "Recruiter profile updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
   // GET RECRUITER PROFILE
   export const getProfile = async (req, res) => {
@@ -103,7 +139,7 @@ import { Notification } from "../models/Notification.js";
     try {
       res.clearCookie("token", {
         httpOnly: true,
-        secure: true,
+        secure: false,
         sameSite: "Strict",
         maxAge: 1 * 60 * 60 * 1000, // 1 hour but in cookie form
       });
@@ -255,35 +291,7 @@ import { Notification } from "../models/Notification.js";
     }
   };
 
-  // Update recruiter profile
-  export const updateRecruiterProfile = async (req, res) => {
-  try {
-    if (!req.recruiter) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    const updates = { ...req.body };
-    if (req.file) {
-      updates.companyPanCardOrGstFile = req.file.path;
-    }
-
-    const updatedRecruiter = await Recruiter.findByIdAndUpdate(
-      req.recruiter._id, //  only update the logged-in recruiter
-      updates,
-      { new: true }
-    );
-
-    return res.status(200).json({
-      success: true,
-      recruiter: updatedRecruiter,
-      message: "Recruiter profile updated successfully",
-    });
-  } catch (error) {
-    console.error("Error updating recruiter profile:", error);
-    res.status(500).json({ success: false, message: "Server error updating profile" });
-  }
-};
-
+ 
   //  Get recruiter profile by ID
   export const getRecruiterProfile = async (req, res) => {
     try {

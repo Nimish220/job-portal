@@ -32,7 +32,7 @@ import {
 const router = express.Router();
 
 // Recruiter auth
-router.post('/register', upload.single("panCardOrGstFile"), registerRecruiter);
+router.post('/register', upload.single("companyPanCardOrGstFile"), registerRecruiter);
 router.post('/login', loginRecruiter);
 router.post('/logout', protect, isRecruiter, recruiterLogout);
 // recruiterRoutes.js
@@ -41,7 +41,7 @@ router.post('/change-password', protect, isRecruiter, changePassword);
 // Recruiter profile
 router.get('/getProfile', protect, isRecruiter, getProfile);
 router.get('/me', protect, isRecruiter, getCurrentRecruiter);
-router.post('/update', protect, isRecruiter, updateRecruiterProfile);
+router.post('/update', protect, isRecruiter, upload.single("companyPanCardOrGstFile"), updateRecruiterProfile);
 
 // Job management
 router.post('/postJob', protect, isRecruiter, postJob);
