@@ -11,7 +11,7 @@ const Logout = () => {
       const result=await logout()
 
       if(result.success){
-        navigate('/users/login')
+        navigate('/') //navigates to landing page
       }
     }
     logoutUser();

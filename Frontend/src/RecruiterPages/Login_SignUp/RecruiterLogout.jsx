@@ -60,10 +60,10 @@ const Logout = () => {
       // 2. Check if the store says "success"
       if (result?.success) {
         toast.success("Recruiter Logged Out Successfully");
-        navigate('/recruiters/login');
+        navigate('/');
       } else {
-        // If API fails, we still navigate to login to be safe
-        navigate('/recruiters/login');
+        // If API fails, we still navigate to landing page to be safe
+        navigate('/');
       }
     };
 
