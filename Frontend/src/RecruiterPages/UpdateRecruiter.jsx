@@ -18,7 +18,7 @@ const UpdateRecruiter = () => {
   });
   const [file, setFile] = useState(null);
   
-  // ✅ 1. Add state for UI errors
+  //  1. Add state for UI errors
   const [uiError, setUiError] = useState(""); 
   
   const fileInputRef = useRef(null);
@@ -60,7 +60,7 @@ const UpdateRecruiter = () => {
       ...prev,
       [e.target.name]: e.target.value,
     }));
-    // ✅ Clear error when user types
+    //  Clear error when user types
     setUiError(""); 
   };
 
@@ -73,7 +73,7 @@ const UpdateRecruiter = () => {
     e.preventDefault();
     if (!formData.email || !formData.phone || !formData.companyName) {
       const msg = "Please fill all required fields";
-      setUiError(msg); // ✅ Show on screen
+      setUiError(msg); //  Show on screen
       return toast.error(msg);
     }
 
@@ -93,14 +93,19 @@ const UpdateRecruiter = () => {
         }
       );
 
-      if (res.data.success) {
+          if (res.data.success) {
+        // 1. Show the popup on the current screen (Update Profile page)
         toast.success("Recruiter updated successfully!");
-        navigate("/recruiters/getProfile");
+        
+        // 2. Wait 2 seconds so the user can see it before the page changes
+        setTimeout(() => {
+          navigate("/recruiters/getProfile");
+        }, 2000); 
       }
     } catch (error) {
-      // ✅ Capture backend error message
+      //  Capture backend error message
       const errMsg = error.response?.data?.message || "Update failed";
-      setUiError(errMsg); // ✅ Show on screen
+      setUiError(errMsg); //  Show on screen
       toast.error(errMsg);
     }
   };
@@ -158,7 +163,7 @@ const UpdateRecruiter = () => {
               Update Recruiter Profile
             </h2>
 
-            {/* ✅ 2. Render the Error Box on screen */}
+            {/*  2. Render the Error Box on screen */}
             {uiError && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-6 text-center text-sm font-medium">
                 {uiError}
