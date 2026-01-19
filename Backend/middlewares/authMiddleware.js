@@ -148,7 +148,7 @@ export const silentCheck = async (req, res) => {
     return res.status(200).json({ authenticated: false, role: null });
   }
 };
-
+/*
 export const isRecruiter = async (req, res, next) => {
   if (!req.recruiter) {
     return res.status(401).json({ message: "Not authorized, user missing" });
@@ -175,5 +175,33 @@ export const isSeeker = async (req, res, next) => {
   }
 
   req.user = user;
+  next();
+};*/
+
+export const isSeeker = async (req, res, next) => {
+  // Use the user object already attached by the 'protect' middleware
+  const user = req.user || (await User.findById(req.user?._id));
+
+  // ✅ FIX: Convert the role to lowercase before checking
+  // This allows "Seeker", "seeker", or "SEEKER" to all pass.
+  if (!user || !user.role || user.role.toLowerCase() !== "seeker") {
+    return res.status(403).json({ 
+      success: false,
+      message: "Access denied: Not a seeker",
+      debugRole: user?.role // Helpful to see what's actually in the DB
+    });
+  }
+
+  req.user = user;
+  next();
+};
+export const isRecruiter = async (req, res, next) => {
+  const recruiter = req.recruiter || (await Recruiter.findById(req.user?._id));
+
+  if (!recruiter || !recruiter.role || recruiter.role.toLowerCase() !== "recruiter") {
+    return res.status(403).json({ message: "Access denied: Not a recruiter" });
+  }
+
+  req.recruiter = recruiter;
   next();
 };

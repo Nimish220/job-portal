@@ -6,6 +6,7 @@
   import { Internship } from "../models/Internship.js";
 import { User} from "../models/User.js";
 import { Notification } from "../models/Notification.js";
+import { uploadToCloudinary } from "../config/cloudinaryConfig.js";
   // LOGIN RECRUITER
   export const loginRecruiter = async (req, res) => {
     const { email, password } = req.body;
@@ -44,7 +45,7 @@ import { Notification } from "../models/Notification.js";
   };
 
   // --- NEW HELPER FUNCTION ---
-const uploadToCloudinary = (fileBuffer) => {
+/*const uploadToCloudinary = (fileBuffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       { folder: "recruiter_docs", resource_type: "auto" },
@@ -55,7 +56,7 @@ const uploadToCloudinary = (fileBuffer) => {
     );
     stream.end(fileBuffer);
   });
-};
+};*/
 
 // REGISTER RECRUITER (Updated for Buffer)
 export const registerRecruiter = async (req, res) => {

@@ -37,62 +37,64 @@ const ApplyJob = () => {
 
   // Submit application (MODIFIED)
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault();
 
-    if (!formData.resume) {
-      alert("Please upload your resume.");
-      return;
-    }
+    if (!formData.resume) {
+      alert("Please upload your resume.");
+      return;
+    }
 
-    setLoading(true);
+    setLoading(true);
 
-    // Dynamically set the API endpoint and the ID key name
-    const endpoint = isInternship 
-      ? backend_url + "/users/applyInternship" // Your new internship endpoint
-      : backend_url + "/users/applyJob"; 
-    
-    const idKey = isInternship ? "internshipId" : "jobId"; // Key expected by the backend controller (e.g., applyToInternships)
+    // 1. Dynamic Endpoint based on page type
+    const endpoint = isInternship 
+      ? backend_url + "/api/users/applyInternship" 
+      : backend_url + "/api/users/applyJob"; 
+    
+    // 2. Map ID to the key the controller expects
+    const idKey = isInternship ? "internshipId" : "jobId";
 
-    try {
-      // Create FormData object for file upload
-      const form = new FormData();
-      
-      // CRUCIAL CHANGE: Dynamically append the correct ID key
-      form.append(idKey, id); 
+    try {
+      const form = new FormData();
+      form.append(idKey, id); 
+      form.append("fullName", formData.fullName);
+      form.append("email", formData.email);
+      form.append("phone", formData.phone);
+      form.append("experience", formData.experience);
+      form.append("currentCompany", formData.currentCompany);
+      form.append("noticePeriod", formData.noticePeriod);
+      form.append("coverLetter", formData.coverLetter);
+      form.append("resume", formData.resume);
 
-      form.append("fullName", formData.fullName);
-      form.append("email", formData.email);
-      form.append("phone", formData.phone);
-      form.append("experience", formData.experience);
-      form.append("currentCompany", formData.currentCompany);
-      form.append("noticePeriod", formData.noticePeriod);
-      form.append("coverLetter", formData.coverLetter);
-      form.append("resume", formData.resume);
+      // 3. Send request
+      const res = await fetch(endpoint, {
+        method: "PUT", 
+        credentials: "include", 
+        body: form,
+      });
 
-      const res = await fetch(endpoint, { // <-- Use the dynamic endpoint
-        method: "PUT",
-        credentials: "include", 
-        body: form,
-      });
+      const data = await res.json();
 
-      const data = await res.json();
+      // 4. Use res.ok (true for 200-299) to handle success
+      if (res.ok) {
+        alert(`Application for ${isInternship ? 'Internship' : 'Job'} submitted successfully!`);
+        console.log("Success:", data);
+        
+        // Use an absolute path for navigation
+        navigate("/dashboard"); 
+      } else {
+        // If the middleware returns 403 or 401, this block handles it
+        alert(`Application Error: ${data.message || "Failed to submit"}`);
+        console.error("Backend Error Details:", data);
+      }
 
-      if (res.status === 200) {
-        alert(`Application for ${isInternship ? 'Internship' : 'Job'} submitted successfully!`);
-        console.log("Response:", data);
-        navigate("/dashboard"); 
-      } else {
-        alert(`Failed to submit application: ${data.message}`);
-        console.error("Error response:", data);
-      }
-
-    } catch (err) {
-      console.error("Error submitting application:", err);
-      alert("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    } catch (err) {
+      console.error("Network/System Error:", err);
+      alert("Something went wrong. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="w-full min-h-screen bg-gray-100 overflow-y-auto">
