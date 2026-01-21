@@ -105,7 +105,7 @@ function PostJob_Internship() {
         eligibilityCriteria
       };
 
-    const response = await fetch(backend_url + "/recruiters/postInternship", {
+    const response = await fetch(backend_url + "/api/recruiters/postInternship", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
