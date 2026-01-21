@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import useUserStore from "../store/userStore.js";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
   const emailRef = useRef();
@@ -65,7 +66,7 @@ const Login = () => {
           {/* Mobile Hamburger */}
           <button
             className="md:hidden flex flex-col gap-1 focus:outline-none"
-            onClick={() => setIsMenuOpen(true)}
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             <span className="w-6 h-0.5 bg-gray-800"></span>
             <span className="w-6 h-0.5 bg-gray-800"></span>
@@ -73,7 +74,52 @@ const Login = () => {
           </button>
         </nav>
       </header>
+      {/* Add this inside your return, right after the closing </header> tag */}
+<AnimatePresence>
+  {isMenuOpen && (
+    <motion.div
+      initial={{ x: "100%" }}
+      animate={{ x: 0 }}
+      exit={{ x: "100%" }}
+      transition={{ type: "spring", damping: 25, stiffness: 200 }}
+      className="fixed inset-0 z-[100] bg-white flex flex-col p-6 shadow-xl md:hidden"
+    >
+      <div className="flex justify-between items-center mb-10">
+        <div className="text-2xl font-bold text-[#4CAF50]">JobPortal</div>
+        {/* Close Button */}
+        <button onClick={() => setIsMenuOpen(false)} className="text-3xl text-gray-800">
+          &times;
+        </button>
+      </div>
 
+      <ul className="flex flex-col gap-6 text-xl text-gray-700 font-medium">
+        <li><Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link></li>
+        <li><Link to="/about" onClick={() => setIsMenuOpen(false)}>About</Link></li>
+        <li><Link to="/subscription" onClick={() => setIsMenuOpen(false)}>Plans</Link></li>
+        <li><Link to="/support" onClick={() => setIsMenuOpen(false)}>Support</Link></li>
+        <hr className="border-gray-100" />
+        <li>
+          <Link 
+            to="/users/login" 
+            className="text-[#4CAF50]"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            User Login
+          </Link>
+        </li>
+        <li>
+          <Link 
+            to="/recruiters/login" 
+            className="text-[#4CAF50]"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Recruiter Login
+          </Link>
+        </li>
+      </ul>
+    </motion.div>
+  )}
+</AnimatePresence>
       <div className="flex min-h-screen bg-gradient-to-r from-gray-100 to-gray-50 justify-center items-center">
         <div className="relative flex w-full max-w-7xl">
           <div className="w-full bg-white rounded-2xl shadow-xl min-h-[600px] flex items-center justify-center">
