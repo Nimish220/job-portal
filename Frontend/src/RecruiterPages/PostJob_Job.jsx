@@ -80,11 +80,13 @@ useEffect(()=>{
     e.preventDefault();
     const jobData = {
       jobType: selectedJobType,
-      jobRole,
+      //jobRole,
       experience,
-      ctc,
+      jobRole: jobRole,           // Map state 'jobRole' to backend key 'title'
+      jobDescription: jobDescription, // Map to 'description' if that's what your model uses
+      ctc:String(ctc),
       skillsRequired,
-      jobDescription,
+      //jobDescription,
       location,
       eligibilityCriteria,
       qualifications,
@@ -356,6 +358,7 @@ useEffect(()=>{
                   onChange={(e) => setJobDescription(e.target.value)}
                   placeholder="Brief job description"
                   className="w-full p-2 border border-gray-300 rounded h-28 resize-none"
+                  required
                 />
               </motion.div>
 

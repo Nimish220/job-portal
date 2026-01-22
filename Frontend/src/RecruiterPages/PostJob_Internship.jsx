@@ -97,9 +97,9 @@ function PostJob_Internship() {
         jobType, // should be 'Internship'
         internshipRole,
         stipendType,
-        stipendAmount,
+        stipendAmount: String(stipendAmount), // Schema expects String
         skillsRequired,
-        internshipDuration,
+        internshipDuration: String(internshipDuration),
         internshipType,
         location,
         eligibilityCriteria
@@ -121,7 +121,7 @@ function PostJob_Internship() {
       resetForm();
     } else {
       console.error("Server error:", data.message);
-      alert("Failed to post internship. Check the console for details.");
+      alert(`Error: ${data.message || "Failed to post internship"}`);
     }
   } catch (error) {
     console.error("Error submitting internship:", error);

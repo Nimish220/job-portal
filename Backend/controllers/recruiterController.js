@@ -182,13 +182,19 @@ export const updateRecruiterProfile = async (req, res) => {
       sender: recruiter._id,
       senderModel: "Recruiter",
       type: "job_posted",
-      message: `New job posted: ${newJob.title} by ${recruiter.companyName}`,
+      message: `New job posted: ${newJob.jobRole} by ${recruiter.companyName}`,
       job: newJob._id,
     }));
     await Notification.insertMany(notifications);
 
     res.status(201).json({ message: "Job created successfully", job: newJob });
   } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: Object.values(error.errors).map(val => val.message).join(', ') 
+      });
+    }
     res.status(500).json({ error: error.message });
     console.log(error);
   }
@@ -263,7 +269,7 @@ export const updateRecruiterProfile = async (req, res) => {
       sender: recruiter._id,
       senderModel: "Recruiter",
       type: "internship_posted",
-      message: `New internship posted: ${newInternship.title} by ${recruiter.companyName}`,
+      message: `New internship posted: ${newInternship.internshipRole} by ${recruiter.companyName}`,
       internship: newInternship._id,
     }));
     await Notification.insertMany(notifications);
@@ -570,7 +576,7 @@ export const getCandidateProfile = async (req, res) => {
 
     res.status(200).json(user);
   } catch (error) {
-    console.error("❌ Error in getCandidateProfile:", error);
+    console.error(" Error in getCandidateProfile:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
