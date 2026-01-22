@@ -39,8 +39,12 @@ const userSchema = new mongoose.Schema(
         ref: "Job",
       },
     ],
+      appliedInternships: [
+    { type: mongoose.Schema.Types.ObjectId,
+      ref: "Internship" },
+  ],
 
-    // ✅ Add this resume field here:
+    //  Add this resume field here:
     resume: [
       {
         fileName: String,

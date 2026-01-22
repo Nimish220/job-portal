@@ -8,6 +8,7 @@ const useUserStore = create((set, get) => {
     loading: false,
     jobs: [],
     appliedJobs: [],
+    appliedInternships: [],
     user: null,
     fetchedUser: false,
 
@@ -125,7 +126,7 @@ const useUserStore = create((set, get) => {
     getAppliedJobs: async () => {
       try {
         const response = await axiosInstance.get('/users/getAppliedJobs');
-        set({ appliedJobs: response.data.appliedJobs, loading: false });
+        set({ appliedJobs: response.data.appliedJobs || [],appliedInternships: response.data.appliedInternships || [], loading: false });
       } catch (error) {
         const msg = error?.response?.data?.message || 'Failed to fetch applied jobs';
         toast.error(msg);
@@ -133,7 +134,7 @@ const useUserStore = create((set, get) => {
     },
   };
 
-  // ✅ Call fetchUser AFTER store has been created
+  //  Call fetchUser AFTER store has been created
   // setTimeout(() => {
   //   get().fetchUser();
   // }, 0);

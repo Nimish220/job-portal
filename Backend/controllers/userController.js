@@ -277,8 +277,12 @@ export const applyToJobs = async (req, res) => {
 export const getAppliedJobs = async (req, res) => {
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId).populate("appliedJobs");
+    const user = await User.findById(userId).populate("appliedJobs").populate("appliedInternships");
     //console.log(user?.appliedJobs);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
     if (user.appliedJobs.length === 0 || !user) {
       return res.status(203).json({
         success: false,
@@ -286,10 +290,11 @@ export const getAppliedJobs = async (req, res) => {
         appliedJobs: [],
       });
     }
-
-    return res
-      .status(200)
-      .json({ success: true, appliedJobs: user.appliedJobs });
+    return res.status(200).json({ 
+      success: true, 
+      appliedJobs: user.appliedJobs || [], 
+      appliedInternships: user.appliedInternships || [] 
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: error.message });
@@ -366,7 +371,7 @@ export const getInternships = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-// ✅ Get internship by ID
+//  Get internship by ID
 export const getInternshipById = async (req, res) => {
   try {
     const internship = await Internship.findById(req.params.id).populate(
@@ -382,7 +387,7 @@ export const getInternshipById = async (req, res) => {
   }
 };
 
-// ✅ Get internship workflow (if you want a separate workflow endpoint like jobs)
+// Get internship workflow (if you want a separate workflow endpoint like jobs)
 export const getInternshipWorkflow = async (req, res) => {
   try {
     const internship = await Internship.findById(req.params.id);
@@ -425,7 +430,9 @@ export const applyToInternships = async (req, res) => {
         const alreadyApplied = internship.candidates.includes(user._id);
         if (alreadyApplied)
             return res.status(403).json({ message: "Already applied to this internship" });
-
+        // Ensure you are pushing to appliedInternships, NOT appliedJobs
+        //user.appliedInternships.push(internshipId);
+        //await user.save({ validateBeforeSave: false });
         // 6. Handle File Upload using Buffer (Multer Memory Storage)
         let resumeData = null;
         if (req.file && req.file.buffer) {
@@ -452,6 +459,7 @@ export const applyToInternships = async (req, res) => {
 
         // 7. Perform the Application Update (Mongoose)
         internship.candidates.push(user._id);
+        user.appliedInternships.push(internship._id);
         
         // Save both records
         await internship.save({ validateBeforeSave: false });
