@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import NavSearchBar from '../components/Header/NavSearchBar';
 import Sidebar from '../components/SideBar';
 import JobCards from '../components/JobCards';
-import AppliedJobs from '../components/AppliedJobs';
 import useUserStore from '../store/userStore.js';
 import { AnimatePresence } from 'framer-motion';
 
@@ -90,7 +89,7 @@ const Dashboard = () => {
       </AnimatePresence>
 
       <div className="flex flex-1 flex-col md:flex-row md:mt-20 lg:ml-64">
-        <div className="flex-1 pl-4 mt-20 md:mt-5 md:w-3/4">
+        <div className="flex-1 pl-4 mt-20 md:mt-5 w-full">
           <div className="bg-white rounded-xl shadow-sm p-5 mr-4">
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
               Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
@@ -100,10 +99,6 @@ const Dashboard = () => {
 
           {/* Pass jobs and applied jobs */}
           <JobCards jobs={jobs} appliedJobs={appliedJobs.map(j => j._id || j.id)} />
-        </div>
-
-        <div className="md:w-1/4">
-          <AppliedJobs />
         </div>
       </div>
     </div>

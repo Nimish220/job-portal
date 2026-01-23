@@ -277,7 +277,22 @@ export const applyToJobs = async (req, res) => {
 export const getAppliedJobs = async (req, res) => {
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId).populate("appliedJobs").populate("appliedInternships");
+    // Nested Populate: User -> Job -> Recruiter
+    const user = await User.findById(userId)
+      .populate({
+        path: "appliedJobs",
+        populate: {
+          path: "recruiter",
+          select: "companyName" // Only get the company name
+        }
+      })
+      .populate({
+        path: "appliedInternships",
+        populate: {
+          path: "recruiter",
+          select: "companyName"
+        }
+      });
     //console.log(user?.appliedJobs);
     if (!user) {
       return res.status(404).json({ message: "User not found" });

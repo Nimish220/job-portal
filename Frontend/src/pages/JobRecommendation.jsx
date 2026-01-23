@@ -50,7 +50,7 @@ const JobRecommendations = () => {
     fetchJobs();
   }, [API_BASE]);
 
-  // ✅ FIXED: Fetch internships using the /api prefix
+  //  FIXED: Fetch internships using the /api prefix
   useEffect(() => {
     const fetchInternships = async () => {
       try {
@@ -121,9 +121,9 @@ const JobRecommendations = () => {
         </span>
 
         <div className="flex items-start mt-6 sm:mt-3">
-          <div className="bg-green-50 p-1 rounded-full mr-3 w-8 h-8 flex items-center justify-center text-[#5F9D08] font-bold text-base md:text-xl flex-shrink-0 hidden sm:block">
-            {company.charAt(0)}
-          </div>
+          <div className="bg-green-50 p-1 rounded-full mr-3 w-8 h-8 hidden sm:flex items-center justify-center text-[#5F9D08] font-bold text-base md:text-xl flex-shrink-0">
+          {company.charAt(0)}
+        </div>
           <div>
             <h3 className="m-0 text-base lg:text-lg font-semibold text-gray-800">{title}</h3>
             <p className="text-xs lg:text-sm font-medium text-[#5F9D08]">{company}</p>
