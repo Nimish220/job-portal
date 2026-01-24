@@ -9,7 +9,10 @@ import AmazonLogo from '../assets/images/AmazonLogo.png';
 import { FaHome,FaBell } from 'react-icons/fa';
 import ProfileImage from '../assets/images/Profile_pics/1.jpg';
 import axios from 'axios';
+import { toast} from 'react-toastify';
 function PostJob_Internship() {
+   //  Ref define 
+    const fileInputRef = React.useRef(null);
   // Animation variants
   const fadeIn = {
     hidden: { opacity: 0 },
@@ -52,6 +55,7 @@ function PostJob_Internship() {
     }
   };
   const [jobType, setJobType] = useState('Internship');
+  const [jobDescription, setJobDescription] = useState('');
   const [internshipRole, setInternshipRole] = useState('');
   const [stipendAmount, setStipendAmount] = useState('');
   const [stipendType, setStipendType] = useState('');
@@ -69,12 +73,6 @@ function PostJob_Internship() {
       window.addEventListener('resize', handleResize);
       return () => window.removeEventListener('resize', handleResize);
     }, []);
-  
-  const handleFileUpload = (e) => {
-    // File upload handling logic
-    console.log('Files selected:', e.target.files);
-    // You can add more logic here to handle the file upload
-  };
   const backend_url = import.meta.env.VITE_BACKEND_URL
   useEffect(()=>{
     const fetchProfile = async () => {
@@ -90,10 +88,39 @@ function PostJob_Internship() {
         fetchProfile();
       }, []);
   
+  const [file, setFile] = useState(null); // Add this state
+
+  // Remove function update 
+    const handleRemoveFile = () => {
+        setFile(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ""; 
+        }
+    };
+  const handleFileUpload = (e) => {
+      setFile(e.target.files[0]); // Capture the file
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!internshipRole || !jobDescription || !stipendType || !internshipType) {
+        return alert("Please fill in the required fields");
+    }
+    const formData = new FormData();
+    formData.append("internshipRole", internshipRole);
+    formData.append("jobDescription", jobDescription);
+    formData.append("stipendType", stipendType);
+    formData.append("stipendAmount", stipendAmount);
+    formData.append("skillsRequired", skillsRequired);
+    formData.append("internshipDuration", internshipDuration);
+    formData.append("internshipType", internshipType);
+    formData.append("location", location);
+    formData.append("eligibilityCriteria", eligibilityCriteria);
+    formData.append("jobType", "Internship");
     try {
-      const internshipData = {
+    // Append the file
+    if (file) formData.append("file", file);
+      /*const internshipData = {
         jobType, // should be 'Internship'
         internshipRole,
         stipendType,
@@ -103,22 +130,20 @@ function PostJob_Internship() {
         internshipType,
         location,
         eligibilityCriteria
-      };
+      };*/
 
-    const response = await fetch(backend_url + "/api/recruiters/postInternship", {
+    const response = await fetch(`${backend_url}/api/recruiters/postInternship`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      body: formData,
       credentials: "include",
-      body: JSON.stringify(internshipData),
     });
 
     const data = await response.json();
-
+  
     if (response.ok) {
-      alert("Internship posted successfully!");
+      toast.success("Internship posted successfully!");
       resetForm();
+      setFile(null);
     } else {
       console.error("Server error:", data.message);
       alert(`Error: ${data.message || "Failed to post internship"}`);
@@ -138,6 +163,7 @@ const resetForm = () => {
   setInternshipType("");
   setLocation("");
   setEligibilityCriteria([]);
+  setJobDescription("");
 };
   
   return (
@@ -459,6 +485,7 @@ const resetForm = () => {
           <motion.div variants={formFieldVariants}>
             <label className="block text-gray-700 font-bold">Attach Document</label>
             <motion.input
+              ref={fileInputRef}
               type="file"
               onChange={handleFileUpload}
               className="w-full p-2 border border-gray-300 rounded"
@@ -478,6 +505,30 @@ const resetForm = () => {
               whileFocus={{ borderColor: '#5F9D08', boxShadow: '0 0 0 2px rgba(95, 157, 8, 0.2)' }}
             />
           </motion.div>
+          <motion.div variants={formFieldVariants}>
+          <label className="block text-gray-700 font-bold">Internship Description</label>
+          <motion.textarea
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+            placeholder="Describe the internship responsibilities and details..."
+            className="w-full p-2 border border-gray-300 rounded h-32 resize-none"
+            required
+            whileFocus={{ borderColor: '#5F9D08', boxShadow: '0 0 0 2px rgba(95, 157, 8, 0.2)' }}
+          />  
+            {/* NEW: Remove file button */}
+                {file && (
+                  <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border border-green-200">
+                    <span className="text-xs text-gray-600 truncate mr-2">Selected: {file.name}</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setFile(null)} 
+                      className="text-xs text-red-500 hover:underline font-medium"
+                    >
+                      Remove
+                    </button>
+                  </div> 
+                )}
+        </motion.div>
 
               {/* ...other fields (stipend, skills, type, duration, etc.) — already good */}
 

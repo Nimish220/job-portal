@@ -24,7 +24,4 @@ const backend_url = import.meta.env.VITE_BACKEND_URL
 export const axiosInstance = axios.create({
   baseURL: backend_url,  
   withCredentials: true, // This allows the browser to store your login session
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });

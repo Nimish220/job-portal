@@ -167,14 +167,37 @@ export const updateRecruiterProfile = async (req, res) => {
   // };
 
   export const postJob = async (req, res) => {
+  //console.log("File detected:", req.file ? "YES" : "NO");
+  //console.log("Body detected:", req.body);
   try {
-    const recruiter = req.recruiter;
-    const newJob = await Job.create({
-      recruiter: recruiter._id,
-      ...req.body,
-    });
+    // 1. Prepare data object (Matches Internship logic)
+   const recruiter = req.recruiter;
+    let fileUrl = "";
 
-    //  Notify all users
+    if (req.file) {
+      fileUrl = await uploadToCloudinary(req.file.buffer, "job_docs");
+    }
+
+    // CREATE OBJECT MANUALLY TO PREVENT ORDER SHIFTING
+    const jobData = {
+      jobRole: req.body.jobRole,
+      jobDescription: req.body.jobDescription,
+      experience: req.body.experience,
+      ctc: req.body.ctc,
+      skillsRequired: req.body.skillsRequired,
+      location: req.body.location,
+      eligibilityCriteria: req.body.eligibilityCriteria,
+      qualifications: req.body.qualifications,
+      requiredDocuments: req.body.requiredDocuments,
+      jobType: req.body.jobType,
+      jobDescriptionDocument: fileUrl, 
+      recruiter: recruiter._id
+    };
+
+    // 3. Save to MongoDB
+    const newJob = await Job.create(jobData);
+
+    // 4. Notifications
     const users = await User.find({}, "_id");
     const notifications = users.map(user => ({
       recipient: user._id,
@@ -190,16 +213,12 @@ export const updateRecruiterProfile = async (req, res) => {
     res.status(201).json({ message: "Job created successfully", job: newJob });
   } catch (error) {
     if (error.name === 'ValidationError') {
-      return res.status(400).json({ 
-        success: false, 
-        message: Object.values(error.errors).map(val => val.message).join(', ') 
-      });
+        const messages = Object.values(error.errors).map(val => val.message);
+        return res.status(400).json({ success: false, message: messages.join(', ') });
     }
     res.status(500).json({ error: error.message });
-    console.log(error);
   }
 };
-
 
   // SEE CANDIDATES
   export const seeCandidates = async (req, res) => {
@@ -256,12 +275,23 @@ export const updateRecruiterProfile = async (req, res) => {
   export const postInternship = async (req, res) => {
   try {
     const recruiter = req.recruiter;
-    const newInternship = await Internship.create({
-      recruiter: recruiter._id,
-      ...req.body,
-    });
+    
+    // 1. Prepare data object from req.body
+    let internshipData = { 
+        ...req.body, 
+        recruiter: recruiter._id 
+    };
 
-    //  Notify all users
+    // 2. Handle file upload BEFORE saving to DB
+    if (req.file) {
+      const fileUrl = await uploadToCloudinary(req.file.buffer, "internship_docs");
+      internshipData.internshipDescriptionDocument = fileUrl; 
+    }
+
+    // 3. Save to MongoDB
+    const newInternship = await Internship.create(internshipData);
+
+    // 4. Notifications logic (Keep your existing notification code here...)
     const users = await User.find({}, "_id");
     const notifications = users.map(user => ({
       recipient: user._id,
@@ -269,16 +299,21 @@ export const updateRecruiterProfile = async (req, res) => {
       sender: recruiter._id,
       senderModel: "Recruiter",
       type: "internship_posted",
-      message: `New internship posted: ${newInternship.internshipRole} by ${recruiter.companyName}`,
+      message: `New internship: ${newInternship.internshipRole} by ${recruiter.companyName}`,
       internship: newInternship._id,
     }));
     await Notification.insertMany(notifications);
 
-    res.status(201).json({
-      message: "Internship created successfully",
-      internship: newInternship,
-    });
+    res.status(201).json({ message: "Internship created successfully", internship: newInternship });
   } catch (error) {
+    if (error.name === 'ValidationError') {
+        // This extracts the specific missing fields from Mongoose
+        const messages = Object.values(error.errors).map(val => val.message);
+        return res.status(400).json({ 
+            success: false, 
+            message: `Validation Error: ${messages.join(', ')}` 
+        });
+    }
     res.status(500).json({ error: error.message });
   }
 };

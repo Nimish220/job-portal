@@ -39,14 +39,16 @@ import TermsAndConditions from './pages/TermsAndConditions.jsx';
 import About from './pages/About.jsx';
 import Support from './pages/Support.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
-
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 function App() {
   
 
   return (
     
     <Router>
-      <Routes>
+      <ToastContainer position="top-right" autoClose={3000} theme="light" />
+      <Routes> 
         {/* Public Routes */}
         <Route path='/' element={<LandingPage />} />
         <Route path='/users/register' element={<Register />} />

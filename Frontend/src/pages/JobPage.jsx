@@ -156,11 +156,20 @@ const JobPage = () => {
 
     const mainTitle = isInternship ? job.internshipRole : job.jobRole;
     const typeText = isInternship ? job.internshipType : job.jobType;
-    const salaryText = isInternship 
-        ? `${job.stipendAmount} ${job.stipendType}` 
-        : `${job.ctc} LPA`;
-    const experienceText = isInternship ? job.internshipDuration : job.experience;
+    const stipendValue = isInternship 
+    ? (job.stipendType === "Unpaid" 
+        ? "Unpaid" 
+    : `${job.stipendAmount} (${job.stipendType})`)
+    : `${job.ctc} LPA`;
 
+    const durationValue = isInternship 
+    ? `${job.internshipDuration} Months` 
+    : `${job.experience} Years`;
+    //const experienceText = isInternship ? job.internshipDuration : job.experience;
+
+    const docUrl = isInternship 
+    ? job.internshipDescriptionDocument 
+    : job.jobDescriptionDocument;
 
     return (
         <div className="flex min-h-screen pt-10 bg-gray-50">
@@ -223,7 +232,7 @@ const JobPage = () => {
                                 <svg className="w-4 h-4 mr-1 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                {salaryText}
+                                {stipendValue}
                             </span>
                         </div>
                     </div>
@@ -293,35 +302,59 @@ const JobPage = () => {
                                     ))}
                                 </div>
                             </div>
-                            <div className="flex flex-wrap md:flex-nowrap">
-                                <div className="w-full md:w-1/3 font-medium text-gray-700 mb-1 md:mb-0">{isInternship ? 'Stipend/Duration:' : 'Job Profile CTC:'}</div>
+
+                            <div className="flex flex-wrap md:flex-nowrap mb-2">
+                                <div className="w-full md:w-1/3 font-medium text-gray-700 mb-1 md:mb-0">
+                                    {isInternship ? 'Monthly Stipend:' : 'Job CTC:'}
+                                </div>
                                 <div className="w-full md:w-2/3 text-gray-800 font-medium">
-                                    {isInternship ? experienceText : salaryText}
+                                    {stipendValue}
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap md:flex-nowrap mb-2">
+                                <div className="w-full md:w-1/3 font-medium text-gray-700 mb-1 md:mb-0">
+                                    {isInternship ? 'Internship Duration:' : 'Experience Required:'}
+                                </div>
+                                <div className="w-full md:w-2/3 text-gray-800">
+                                    {durationValue}
                                 </div>
                             </div>
                         </div>
 
-                        <h3 className="mt-6 font-bold text-xl text-gray-800 border-l-4 border-[#5F9D08] pl-3">{isInternship ? 'Internship Description' : 'Job Description'}</h3>
+                        <h3 className="mt-6 font-bold text-xl text-gray-800 border-l-4 border-[#5F9D08] pl-3">
+                            {isInternship ? 'Internship Description' : 'Job Description'}
+                        </h3>
                         <div className="mt-4 bg-gray-50 p-4 rounded-lg text-gray-700 leading-relaxed">
-                            {job.jobDescription?.split('\n').map((line, index) => (
-                                <p key={index} className="mb-2">{line}</p>
-                            ))}
+                            {job.jobDescription ? (
+                                job.jobDescription.split('\n').map((line, index) => (
+                                    <p key={index} className="mb-2">{line}</p>
+                                ))
+                            ) : (
+                                <p className="text-gray-500 italic text-center py-4">no internship detail</p>
+                            )}
                         </div>
 
-                        <div className="mt-6">
-                            <h3 className="font-bold text-xl text-gray-800 border-l-4 border-[#5F9D08] pl-3">Attached Documents</h3>
-                            <div className="mt-4 flex items-center">
-                                <a
-                                    href={job.link || '#'}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all duration-300"
-                                >
-                                    <img src={pdfIcon} alt="PDF Icon" className="w-10 h-10" />
-                                    <span className="ml-3 text-gray-700 hover:text-[#5F9D08]">{isInternship ? 'Internship' : 'Job'} Description Document</span>
-                                </a>
-                            </div>
-                        </div>
+                      <div className="mt-6">
+                    <h3 className="font-bold text-xl text-gray-800 border-l-4 border-[#5F9D08] pl-3">Attached Documents</h3>
+                    <div className="mt-4 flex items-center">
+                        {docUrl ? (
+                            <a
+                                href={docUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all duration-300"
+                            >
+                                <img src={pdfIcon} alt="PDF Icon" className="w-10 h-10" />
+                                <span className="ml-3 text-gray-700 hover:text-[#5F9D08]">
+                                    {isInternship ? 'Internship' : 'Job'} Description Document
+                                </span>
+                            </a>
+                        ) : (
+                            <p className="text-gray-500 italic ml-4">No description document attached.</p>
+                        )}
+                    </div>
+</div>
                     </motion.div>
                 )}
 
@@ -397,7 +430,7 @@ const JobPage = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-medium text-gray-800">Experience / Duration</h4>
-                                        <p className="text-gray-600 text-sm mt-1">{experienceText}</p>
+                                        <p className="text-gray-600 text-sm mt-1">{durationValue}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start">

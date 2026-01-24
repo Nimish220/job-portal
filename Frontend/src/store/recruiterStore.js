@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { axiosInstance } from "../utils/axiosInstance"; // ✅ fixed path
+import { axiosInstance } from "../utils/axiosInstance"; //  fixed path
 import { toast } from "react-toastify";
 
 const recruiterStore = create((set) => ({
@@ -29,7 +29,7 @@ const recruiterStore = create((set) => ({
   } catch (err) {
     const status = err.response?.status;
     
-    // ✅ PERMANENT FIX: If status is 401 or 403, it just means 
+    //  PERMANENT FIX: If status is 401 or 403, it just means 
     // this person isn't a recruiter. Don't log it as an error.
     if (status !== 401 && status !== 403) {
       console.error("Unexpected error fetching recruiter:", err);
@@ -43,7 +43,7 @@ const recruiterStore = create((set) => ({
   try {
     const response = await axiosInstance.post("/recruiters/register", formData, {
       headers: {
-        "Content-Type": "multipart/form-data", // ✅ Explicitly needed here if axiosInstance has a default
+        "Content-Type": "multipart/form-data", //  Explicitly needed here if axiosInstance has a default
       },
     });
 
@@ -76,10 +76,13 @@ const recruiterStore = create((set) => ({
     }
   },
 
-  postJob: async (jobData) => {
+  postJob: async (formData) => {
     try {
       set({ loading: true });
-      const response = await axiosInstance.post("/recruiters/postJob", jobData);
+      const response = await axiosInstance.post("/recruiters/postJob", formData,{
+        withCredentials: true,
+      });
+      
       set({ loading: false });
       toast.success("Job posted successfully!");
       return { success: true };

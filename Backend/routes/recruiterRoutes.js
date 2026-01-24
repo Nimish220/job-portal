@@ -44,8 +44,8 @@ router.get('/me', protect, isRecruiter, getCurrentRecruiter);
 router.post('/update', protect, isRecruiter, upload.single("companyPanCardOrGstFile"), updateRecruiterProfile);
 
 // Job management
-router.post('/postJob', protect, isRecruiter, postJob);
-router.post('/postInternship', protect, isRecruiter, postInternship);
+router.post('/postJob', protect, isRecruiter,upload.single("file"), postJob);
+router.post('/postInternship', protect, isRecruiter,upload.single("file"), postInternship);
 router.get('/myJobs', protect, isRecruiter, getRecruiterJobs); // keep only one
 router.get('/jobs', getAllJobs);
 router.get('/jobs/:id', protect, getJobById);

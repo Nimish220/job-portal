@@ -25,6 +25,7 @@ const jobSchema=new mongoose.Schema({
     skillsRequired:{type:String,required:true},
     jobRole:{type:String,required:true},
     jobDescription:{type:String,required:true},
+    jobDescriptionDocument: { type: String },
     experience: {type: String, required: true},
     qualifications: {type: String, required: true},
     jobType: {type: String, enum: ['Full-Time', 'Part-Time'], default: 'Full-Time'},

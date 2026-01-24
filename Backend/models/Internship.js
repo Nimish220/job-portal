@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 
 const internshipSchema = new mongoose.Schema({
   internshipRole: { type: String, required: true },
+  jobDescription: { type: String }, 
+  internshipDescriptionDocument: { type: String },
   stipendType: { type: String, enum: ["Fixed", "Performance Based", "Unpaid"], required: true },
   stipendAmount: { type: String },
   skillsRequired: { type: String },

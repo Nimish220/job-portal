@@ -9,6 +9,7 @@ import { FaHome,FaBell } from "react-icons/fa";
 import AmazonLogo from '../assets/images/AmazonLogo.png';
 import ProfileImage from '../assets/images/Profile_pics/1.jpg';
 import axios from "axios";
+import { toast} from 'react-toastify';
 function PostJob_Job() {
   // Animation variants
   const fadeIn = {
@@ -49,57 +50,102 @@ function PostJob_Job() {
   const [qualifications, setQualifications] = useState("");
   const [requiredDocuments, setRequiredDocuments] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [screenWidth, setScreenWidth] = useState(window.innerWidth);
-   const [userName, setUserName] = useState('');
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const [userName, setUserName] = useState('');
 
   const { postJob } = useRecruiterStore();
-const isMobile = screenWidth < 768;
-useEffect(() => {
-    const handleResize = () => setScreenWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-const backend_url = import.meta.env.VITE_BACKEND_URL
-useEffect(()=>{
-  const fetchProfile = async () => {
-      try {
-        const res = await axios.get(backend_url+'/api/recruiters/getProfile', {
-          withCredentials: true
-        });
-        setUserName(res.data.recruiter.companyName);
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-      }
-    };
-
-    
+  const isMobile = screenWidth < 768;
+  useEffect(() => {
+      const handleResize = () => setScreenWidth(window.innerWidth);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+  const backend_url = import.meta.env.VITE_BACKEND_URL
+  
+  useEffect(()=>{
+    const fetchProfile = async () => {
+        try {
+          const res = await axios.get(backend_url+'/api/recruiters/getProfile', {
+            withCredentials: true
+          });
+          setUserName(res.data.recruiter.companyName);
+        } catch (error) {
+          console.error("Error fetching profile:", error);
+          if(error.response?.status === 403) {
+                toast.error("Session expired. Please login again.");
+            }
+        }
+      }; 
     fetchProfile();
-  }, []);
+  }, [backend_url]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const jobData = {
-      jobType: selectedJobType,
-      //jobRole,
-      experience,
-      jobRole: jobRole,           // Map state 'jobRole' to backend key 'title'
-      jobDescription: jobDescription, // Map to 'description' if that's what your model uses
-      ctc:String(ctc),
-      skillsRequired,
-      //jobDescription,
-      location,
-      eligibilityCriteria,
-      qualifications,
-      requiredDocuments
-    };
+  const [file, setFile] = useState(null);
 
-    const result = await postJob(jobData);
-    if (result.success) {
-      resetForm();
-      alert("Job posted successfully!");
-    }
+  const handleFileUpload = (e) => {
+      setFile(e.target.files[0]);
   };
+  const fileInputRef = React.useRef(null);
+  const handleRemoveFile = () => {
+    setFile(null);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // This physically clears the browser text
+    }
+};
+ const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append("jobRole", jobRole);
+    formData.append("jobDescription", jobDescription);
+    formData.append("experience", String(experience));
+    formData.append("ctc", String(ctc));
+    formData.append("skillsRequired", skillsRequired);
+    formData.append("location", location);
+    formData.append("eligibilityCriteria", eligibilityCriteria);
+    formData.append("qualifications", qualifications);
+    formData.append("requiredDocuments", requiredDocuments);
+    formData.append("jobType", selectedJobType);
 
+    if (file) {
+        formData.append("file", file); 
+    }
+
+    // 1. Sabse pehle Loading Toast dikhayein
+    const loadingToast = toast.loading("Uploading documents and posting job...");
+
+    try {
+        // 2. AB API call karein (Sirf EK baar)
+        const result = await postJob(formData);
+        
+        if (result.success) {
+            // 3. Success hone par update karein
+            toast.update(loadingToast, { 
+                render: "Job posted successfully!", 
+                type: "success", 
+                isLoading: false,
+                autoClose: 3000 
+            });
+            resetForm();
+            handleRemoveFile();
+        } else {
+            // 4. Backend error handling
+            toast.update(loadingToast, { 
+                render: result.message || "Failed to post job", 
+                type: "error", 
+                isLoading: false,
+                autoClose: 3000 
+            });
+        }
+    } catch (error) {
+        // 5. Network error handling
+        toast.update(loadingToast, { 
+            render: "Something went wrong!", 
+            type: "error", 
+            isLoading: false,
+            autoClose: 3000 
+        });
+    }
+};
   const resetForm = () => {
     setJobRole("");
     setExperience("");
@@ -126,7 +172,7 @@ useEffect(()=>{
               <div className="flex items-center space-x-4 w-full sm:w-auto">
                 <Link to="/recruiters/jobs/active">
                             <img src={AmazonLogo} alt="Amazon Logo" className="w-8 h-8" />
-                          </Link>
+                </Link>
               </div>
       
               {/* Right: Search + Notifications + Profile */}
@@ -260,6 +306,7 @@ useEffect(()=>{
                 <label className="block text-gray-700 font-bold">Experience (Years)</label>
                 <motion.input
                   type="number"
+                  min="0"
                   value={experience}
                   onChange={(e) => setExperience(e.target.value)}
                   placeholder="e.g., 2"
@@ -271,6 +318,7 @@ useEffect(()=>{
                 <label className="block text-gray-700 font-bold">CTC (in LPA)</label>
                 <motion.input
                   type="number"
+                  min="0"
                   value={ctc}
                   onChange={(e) => setCtc(e.target.value)}
                   placeholder="e.g., 10"
@@ -308,6 +356,29 @@ useEffect(()=>{
                   placeholder="e.g., Minimum CGPA 7.5"
                   className="w-full p-2 border border-gray-300 rounded"
                 />
+              </motion.div>
+
+              <motion.div variants={formFieldVariants}>
+                <label className="block text-gray-700 font-bold">Job Description Document (PDF/Image)</label>
+                <input
+                  ref={fileInputRef} // Replace 'key' with 'ref'
+                  type="file"
+                  onChange={handleFileUpload}
+                  className="w-full p-2 border border-gray-300 rounded bg-white mt-1"
+                  accept=".pdf,.docx,image/*"
+                />
+                {/* NEW: Remove file button */}
+                {file && (
+                  <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border border-green-200">
+                    <span className="text-xs text-gray-600 truncate mr-2">Selected: {file.name}</span>
+                    <button 
+                      type="button" 
+                      onClick={handleRemoveFile} 
+                      className="text-xs text-red-500 hover:underline font-medium"
+                    >
+                      Remove
+                    </button>
+                  </div> )}
               </motion.div>
 
               <motion.div variants={formFieldVariants}>
