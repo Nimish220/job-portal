@@ -19,14 +19,15 @@ import { getInternships, getInternshipById } from "./controllers/userController.
 dotenv.config();
 const app = express();
 
-// ✅ Allow credentials and specific origins to resolve 403 Forbidden errors
+//  Allow credentials and specific origins to resolve 403 Forbidden errors
 app.use(
   cors({
     origin: [
-        "http://localhost:5173",
-        "https://job-portal-frontend-4465.onrender.com"
+       "http://localhost:5173",
+       "https://job-portal-frontend-two-kappa.vercel.app",
+        "https://job-portal-frontend-2ze4f5rbe-nimishs-projects-2486b21c.vercel.app"
     ],
-    credentials: true, // Required for authentication cookies
+    credentials: true, 
   })
 );
 
@@ -34,7 +35,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ FIXED: All middleware now uses the /v1 prefix to match the Frontend
+//  FIXED: All middleware now uses the /v1 prefix to match the Frontend
 app.use("/api/recruiters", recruiterRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes); 
@@ -43,7 +44,7 @@ app.use("/api/upload", upload);
 app.use("/api/users/notifications", notificationRoutes);
 app.use("/api/recruiters/notifications", notificationRoutes);
 
-// ✅ FIXED: Get all jobs route
+//  FIXED: Get all jobs route
 app.get("/api/jobs", async (req, res) => {
   try {
     const jobs = await Job.find().populate("recruiter", "companyName name email");
@@ -53,7 +54,7 @@ app.get("/api/jobs", async (req, res) => {
   }
 });
 
-// ✅ FIXED: Get job by ID (Resolves the SyntaxError: Unexpected token '<')
+//  FIXED: Get job by ID (Resolves the SyntaxError: Unexpected token '<')
 app.get("/api/jobs/:id", async (req, res) => {
   try {
     const job = await Job.findById(req.params.id).populate("recruiter", "companyName email");
@@ -66,11 +67,11 @@ app.get("/api/jobs/:id", async (req, res) => {
   }
 });
 
-// ✅ FIXED: Internship routes now versioned
+//  FIXED: Internship routes now versioned
 app.get("/api/internships", getInternships);
 app.get("/api/internships/:id", getInternshipById);
 
-// ✅ FIXED: Applicant details route versioned
+//  FIXED: Applicant details route versioned
 app.get('/api/applicants/:applicantId', protect, isRecruiter, async (req, res) => {
   try {
     const user = await User.findById(req.params.applicantId)
