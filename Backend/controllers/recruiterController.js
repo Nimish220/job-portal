@@ -23,11 +23,18 @@ import { uploadToCloudinary } from "../config/cloudinaryConfig.js";
         expiresIn: "1h",
       });
 
-        res.cookie("token", token, {
+        /*res.cookie("token", token, {
         httpOnly: true,
         secure: false, // Set to false for localhost http
         sameSite: "lax", 
-        maxAge: 1 * 60 * 60 * 1000, 
+        maxAge: 1 * 60 * 60 * 1000,
+        });*/
+      
+      res.cookie("token", token, {
+      httpOnly: true,
+      secure: true, // Vercel (HTTPS) par true hona chahiye
+      sameSite: "None", // Cross-site cookies ke liye zaroori hai
+      maxAge: 1 * 60 * 60 * 1000, 
       });
 
       res.status(200).json({

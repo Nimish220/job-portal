@@ -20,11 +20,17 @@ export const loginUser = async (req, res) => {
       expiresIn: "1h",
     });
 
-    res.cookie("token", token, {
+    /*res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
+      secure: true, // Localhost ke liye sahi tha
       sameSite: "None",
       maxAge: 1 * 60 * 60 * 1000, // 1 hour but in cookie form
+    });*/
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true, // Vercel (HTTPS) par true hona chahiye
+      sameSite: "None", // Cross-site cookies ke liye zaroori hai
+      maxAge: 1 * 60 * 60 * 1000, 
     });
     console.log('User login successful');
     res.status(200).json({
