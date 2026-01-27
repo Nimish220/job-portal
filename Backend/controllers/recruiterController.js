@@ -23,10 +23,17 @@ import { uploadToCloudinary } from "../config/cloudinaryConfig.js";
         expiresIn: "1h",
       });
 
-        res.cookie("token", token, {
+        /*res.cookie("token", token, {
         httpOnly: true,
         secure: false, // Set to false for localhost http
         sameSite: "lax", 
+        maxAge: 1 * 60 * 60 * 1000, 
+      });*/
+      //For Production
+        res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,      // Required for Vercel's HTTPS
+        sameSite: "none",  // Required for cross-domain cookies
         maxAge: 1 * 60 * 60 * 1000, 
       });
 
@@ -138,11 +145,17 @@ export const updateRecruiterProfile = async (req, res) => {
   // RECRUITER LOGOUT
   export const recruiterLogout = async (req, res) => {
     try {
-      res.clearCookie("token", {
+      /*res.clearCookie("token", {
         httpOnly: true,
         secure: false,
         sameSite: "Strict",
         maxAge: 1 * 60 * 60 * 1000, // 1 hour but in cookie form
+      });*/
+      res.clearCookie("token", {
+        httpOnly: true,
+        secure: true,      // Required for Vercel's HTTPS
+        sameSite: "none",  // Required for cross-domain cookies
+        //maxAge: 1 * 60 * 60 * 1000, 
       });
       res.status(200).json({ message: "Logout Sucessfull" });
     } catch (error) {
