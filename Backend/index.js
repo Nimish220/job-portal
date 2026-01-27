@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
+import session from "express-session";
+import MongoStore from "connect-mongo";
 import recruiterRoutes from "./routes/recruiterRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import upload from "./routes/upload.js";
@@ -19,6 +21,8 @@ import { getInternships, getInternshipById } from "./controllers/userController.
 dotenv.config();
 const app = express();
 
+app.set("trust proxy", 1);
+
 //  Allow credentials and specific origins to resolve 403 Forbidden errors
 app.use(
   cors({
@@ -32,6 +36,21 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
+ //Session Middleware
+app.use(session({
+    secret: process.env.SESSION_SECRET || "a_very_long_random_string",
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGO_URI, 
+    }),
+    cookie: {
+        secure: true,      // Set to true because you are using HTTPS on Vercel
+        sameSite: "none",  // Allows cookies to work across different domains
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 
+    }
+}));
 
 app.use(cookieParser());
 app.use(express.json());
