@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
+import session from "express-session";
+import MongoStore from "connect-mongo";
 import recruiterRoutes from "./routes/recruiterRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import upload from "./routes/upload.js";
@@ -19,11 +21,27 @@ import { getInternships, getInternshipById } from "./controllers/userController.
 dotenv.config();
 const app = express();
 
+// Add this at the very top, before any other middleware or routes
+app.use((req, res, next) => {
+  // Dynamically allow the origin that is making the request
+  res.header("Access-Control-Allow-Origin", req.headers.origin);
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+
+  // This prevents the 500 error by answering the browser's pre-check instantly
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // ✅ Allow credentials and specific origins to resolve 403 Forbidden errors
 app.use(
   cors({
     origin: [
         "http://localhost:5173",
+        "https://job-portal-frontend-two-kappa.vercel.app",
         "https://job-portal-frontend-4465.onrender.com"
     ],
     credentials: true, // Required for authentication cookies
@@ -34,6 +52,21 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(session({
+    secret: process.env.SESSION_SECRET || "a_very_long_random_string",
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGO_URI,
+        dbName: "test" 
+    }),
+    cookie: {
+        secure: true,      // Required for Vercel HTTPS
+        sameSite: "none",  // Required for cross-domain
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 
+    }
+}));
 // ✅ FIXED: All middleware now uses the /v1 prefix to match the Frontend
 app.use("/api/recruiters", recruiterRoutes);
 app.use("/api/users", userRoutes);
