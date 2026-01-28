@@ -6,7 +6,7 @@ import axios from 'axios';
 import { 
   FiX, FiCheck, FiMoreVertical, FiEdit2, FiTrash2, 
   FiEye, FiUploadCloud, FiFileText, FiSquare, FiCheckSquare,
-  FiAlertCircle, FiDownload, FiSearch, FiInbox
+  FiAlertCircle, FiInbox, FiDownload
 } from 'react-icons/fi';
 
 const Resume = () => {
@@ -16,17 +16,18 @@ const Resume = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   
-  // Selection & UI State
   const [selectedIds, setSelectedIds] = useState([]);
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null, bulk: false });
-
+  const [renameModal, setRenameModal] = useState({ show: false, id: null, oldName: '' });
+  const [newName, setNewName] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const base = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
   const API_URL = `${base}/api/upload/resume`; 
 
   const triggerNotification = (message, type = 'success') => {
     setNotification({ show: true, message, type });
-    setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000);
+    setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 4000);
   };
 
   const fetchResumes = async () => {
@@ -50,42 +51,102 @@ const Resume = () => {
     window.open(fileUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const handleDownload = async (fileUrl, fileName) => {
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName || 'resume.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      triggerNotification("Download failed", "error");
+    }
+  };
   const handleUpload = async () => {
     if (!newPdf.file) return;
+
+    const maxSize = 2 * 1024 * 1024; 
+    
+    // Check size first
+    if (newPdf.file.size > maxSize) {
+      setShowModal(false); // Close modal to remove blur effect
+      triggerNotification("File is too large! Max limit is 2MB", "error");
+      return;
+    }
+
+    // Check type
     if (newPdf.file.type !== "application/pdf") {
+        setShowModal(false); // Close modal to remove blur effect
         triggerNotification("Only PDF resumes are supported", "error");
         return;
     }
+
     const formData = new FormData();
     formData.append("resume", newPdf.file);
+    
     try {
-      await axios.post(API_URL, formData, { headers: { "Content-Type": "multipart/form-data" }, withCredentials: true });
+      setIsUploading(true);
+      await axios.post(API_URL, formData, { 
+        headers: { "Content-Type": "multipart/form-data" }, 
+        withCredentials: true 
+      });
       fetchResumes();
       setShowModal(false);
       setNewPdf({ fileName: '', file: null });
       triggerNotification("Resume uploaded successfully!");
-    } catch (error) { triggerNotification("Upload failed", "error"); }
-  };
-
-    const processDelete = async () => {
-    try {
-      if (deleteConfirm.bulk) {
-        // Deleting multiple files
-        for (const id of selectedIds) {
-          await axios.delete(`${API_URL}/${encodeURIComponent(id)}`, { withCredentials: true });
-        }
-        setSelectedIds([]);
-      } else {
-        // Deleting single file
-        await axios.delete(`${API_URL}/${encodeURIComponent(deleteConfirm.id)}`, { withCredentials: true });
-      }
-      fetchResumes(); // Refresh the list
-      setDeleteConfirm({ show: false, id: null, bulk: false });
-      triggerNotification("Action completed successfully!");
-    } catch (err) { 
-      triggerNotification("Some items could not be deleted", "error"); 
+    } catch (error) { 
+      setShowModal(false); // Close modal to remove blur effect
+      const errMsg = error.response?.data?.error || "Upload failed";
+      triggerNotification(errMsg, "error"); 
+      } finally {
+      setIsUploading(false); // STOP LOADING
     }
   };
+
+  const processDelete = async () => {
+  try {
+    if (deleteConfirm.bulk) {
+      // Deleting multiple files
+      for (const id of selectedIds) {
+        await axios.delete(`${API_URL}/${encodeURIComponent(id)}`, { withCredentials: true });
+      }
+      setSelectedIds([]);
+    } else {
+      // Deleting single file
+      await axios.delete(`${API_URL}/${encodeURIComponent(deleteConfirm.id)}`, { withCredentials: true });
+    }
+    
+    fetchResumes(); // Refresh the list from the server
+    setDeleteConfirm({ show: false, id: null, bulk: false });
+    triggerNotification("Item(s) deleted successfully!", "success");
+  } catch (err) { 
+    console.error("Delete UI Error:", err);
+    const errorMsg = err.response?.data?.error || "Could not delete item(s)";
+    triggerNotification(errorMsg, "error"); 
+    setDeleteConfirm({ show: false, id: null, bulk: false });
+  }
+};
+
+const handleRename = async () => {
+  if (!newName.trim()) return;
+  try {
+    await axios.put(`${API_URL}/${renameModal.id}`, 
+      { newFileName: newName }, 
+      { withCredentials: true }
+    );
+    fetchResumes();
+    setRenameModal({ show: false, id: null, oldName: '' });
+    setNewName('');
+    triggerNotification("File renamed successfully!");
+  } catch (error) {
+    triggerNotification("Rename failed", "error");
+  }
+};
 
   const toggleSelect = (id) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -97,19 +158,19 @@ const Resume = () => {
   };
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen pt-16 relative overflow-x-hidden font-sans">
+    <div className="bg-[#F8FAFC] min-h-screen pt-16 relative font-sans">
       
-      {/* Toast Notification */}
+      {/* Notifications - Increased z-index to stay above everything */}
       <AnimatePresence>
         {notification.show && (
           <motion.div 
-            initial={{ y: 50, opacity: 0, x: "-50%" }} 
-            animate={{ y: 0, opacity: 1, x: "-50%" }} 
-            exit={{ y: 20, opacity: 0, x: "-50%" }}
-            className={`fixed bottom-10 left-1/2 z-[140] px-6 py-3 rounded-2xl shadow-2xl text-white font-bold flex items-center gap-3 ${notification.type === 'success' ? 'bg-[#10B981]' : 'bg-red-500'}`}
+            initial={{ y: -100, opacity: 0, x: "-50%" }} 
+            animate={{ y: 20, opacity: 1, x: "-50%" }} 
+            exit={{ y: -100, opacity: 0, x: "-50%" }}
+            className={`fixed top-20 left-1/2 z-[300] px-6 py-4 rounded-2xl shadow-2xl text-white font-bold flex items-center gap-3 min-w-[300px] border-b-4 ${notification.type === 'success' ? 'bg-emerald-500 border-emerald-700' : 'bg-rose-500 border-rose-700'}`}
           >
-            {notification.type === 'success' ? <FiCheck /> : <FiAlertCircle />}
-            {notification.message}
+            {notification.type === 'success' ? <FiCheck size={24}/> : <FiAlertCircle size={24}/>}
+            <span className="text-sm uppercase tracking-wide">{notification.message}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -117,193 +178,236 @@ const Resume = () => {
       <NavSearchBar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} showHamburger={true} />
       
       <div className='flex flex-col lg:flex-row min-h-screen'>
-        {screenWidth >= 1024 && <div className="fixed top-20 left-0 z-30 w-64"><Sidebar isOpen={true} isMobile={false} /></div>}
+        {screenWidth >= 1024 && <div className="fixed top-20 left-0 z-30 w-64 border-r border-slate-100"><Sidebar isOpen={true} isMobile={false} /></div>}
         
         <div className="flex-1 p-4 sm:p-10 lg:ml-64">
-          
           {/* Header Section */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
              <div>
-                <h2 className="text-3xl font-black text-slate-900 tracking-tight">Resume Vault</h2>
-                <p className="text-slate-500 font-medium mt-1">Manage and store your professional resumes.</p>
+                <h2 className="text-4xl font-black text-slate-900 tracking-tight">Resume Vault</h2>
+                <p className="text-slate-400 font-medium mt-1">Standard 2MB PDF storage for your job hunt.</p>
              </div>
-             <div className="flex items-center gap-3 w-full md:w-auto">
+             <div className="flex items-center gap-4 w-full md:w-auto">
                {pdfs.length > 0 && (
                  <button 
                   onClick={toggleSelectAll}
-                  className="p-3 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
-                  title="Select All"
+                  className="p-4 bg-white border-2 border-slate-100 rounded-2xl text-slate-400 hover:border-[#5F9D08] hover:text-[#5F9D08] transition-all shadow-sm"
                  >
-                   {selectedIds.length === pdfs.length ? <FiCheckSquare size={20} className="text-[#5F9D08]"/> : <FiSquare size={20}/>}
+                   {selectedIds.length === pdfs.length ? <FiCheckSquare size={24} className="text-[#5F9D08]"/> : <FiSquare size={24}/>}
                  </button>
                )}
                <button 
                 onClick={() => setShowModal(true)} 
-                className="flex-1 md:flex-none bg-[#5F9D08] hover:bg-[#4d8006] text-white px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-200/50"
+                className="flex-1 md:flex-none bg-[#5F9D08] hover:bg-[#4d8006] text-white px-10 py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-xl shadow-green-100 active:scale-95"
                >
-                 <FiUploadCloud size={20} /> <span>Upload New</span>
+                 <FiUploadCloud size={22} /> <span className="uppercase tracking-widest text-xs">Upload New</span>
                </button>
              </div>
           </div>
 
-          {/* Bulk Actions Bar */}
+          {/* Bulk Selection Bar */}
           <AnimatePresence>
             {selectedIds.length > 0 && (
               <motion.div 
-                initial={{ y: 20, opacity: 0 }} 
-                animate={{ y: 0, opacity: 1 }} 
-                exit={{ y: 20, opacity: 0 }}
-                className="mb-6 bg-slate-900 text-white p-4 rounded-2xl flex items-center justify-between shadow-xl"
+                initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }}
+                className="mb-8 bg-slate-900 text-white p-5 rounded-[2rem] flex items-center justify-between shadow-2xl border border-white/10"
               >
-                <span className="font-bold ml-2">{selectedIds.length} Resumes Selected</span>
-                <div className="flex gap-2">
-                  <button onClick={() => setSelectedIds([])} className="px-4 py-2 hover:bg-white/10 rounded-lg transition-all text-sm font-bold">Cancel</button>
+                <div className="flex items-center gap-4 ml-4">
+                  <div className="w-8 h-8 bg-[#5F9D08] rounded-full flex items-center justify-center text-xs font-black">{selectedIds.length}</div>
+                  <span className="font-bold tracking-tight uppercase text-xs">Items Selected</span>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setSelectedIds([])} className="px-6 py-2 hover:bg-white/10 rounded-xl transition-all text-xs font-black uppercase">Cancel</button>
                   <button 
                     onClick={() => setDeleteConfirm({show: true, bulk: true})}
-                    className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition-all text-sm font-bold flex items-center gap-2"
+                    className="bg-rose-500 hover:bg-rose-600 px-6 py-3 rounded-xl transition-all text-xs font-black flex items-center gap-2 uppercase tracking-widest"
                   >
-                    <FiTrash2 size={16}/> Delete
+                    <FiTrash2 size={16}/> Delete All
                   </button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Main Content Grid */}
+          {/* Main Grid */}
           {pdfs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
               {pdfs.map((pdfItem, index) => {
                 const id = pdfItem._id || pdfItem.id;
                 const isSelected = selectedIds.includes(id);
 
                 return (
                   <motion.div 
-                    key={id || index}
-                    layout
-                    className={`relative bg-white rounded-[2rem] border-2 p-6 transition-all duration-300 group ${isSelected ? 'border-[#5F9D08] shadow-md' : 'border-transparent hover:border-slate-200 shadow-sm hover:shadow-md'}`}
+                    key={id || index} layout
+                    className={`relative bg-white rounded-[2.5rem] border-2 p-8 transition-all duration-300 group ${isSelected ? 'border-[#5F9D08] bg-green-50/10 shadow-lg' : 'border-transparent hover:border-slate-200 shadow-sm hover:shadow-xl'}`}
                   >
-                    {/* Selection Checkbox */}
                     <div 
                       onClick={() => toggleSelect(id)}
-                      className={`absolute top-5 right-5 cursor-pointer p-1 rounded-md transition-all ${isSelected ? 'text-[#5F9D08] opacity-100' : 'text-slate-300 opacity-0 group-hover:opacity-100'}`}
+                      className={`absolute top-6 right-6 cursor-pointer p-1 transition-all ${isSelected ? 'text-[#5F9D08]' : 'text-slate-200 group-hover:text-slate-400'}`}
                     >
-                      {isSelected ? <FiCheckSquare size={22}/> : <FiSquare size={22}/>}
+                      {isSelected ? <FiCheckSquare size={26}/> : <FiSquare size={26}/>}
                     </div>
 
                     <div className="flex flex-col items-center text-center">
-                      <div className={`p-5 rounded-2xl mb-4 transition-colors ${isSelected ? 'bg-green-50 text-[#5F9D08]' : 'bg-slate-50 text-slate-400 group-hover:bg-red-50 group-hover:text-red-500'}`}>
-                        <FiFileText size={40} />
+                      <div className={`p-6 rounded-3xl mb-6 transition-colors ${isSelected ? 'bg-[#5F9D08] text-white' : 'bg-slate-50 text-slate-300 group-hover:bg-rose-50 group-hover:text-rose-500'}`}>
+                        <FiFileText size={48} />
                       </div>
-                      <h4 className="font-bold text-slate-800 truncate w-full px-2 text-lg mb-1">{pdfItem.fileName}</h4>
-                      <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
-                        <span className="w-2 h-2 rounded-full bg-slate-200"></span>
-                        PDF Document
-                      </div>
+                      <h4 className="font-black text-slate-800 truncate w-full px-2 text-lg mb-1 uppercase tracking-tight">{pdfItem.fileName}</h4>
+                      <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">PDF Document</p>
                     </div>
-
-                    <div className="flex gap-3 mt-8 pt-5 border-t border-slate-50">
-                      <button 
+            
+                    <div className="mt-8 space-y-3 px-2">
+                      {/* PRIMARY: View Asset (Uniform Solid Green) */}
+                      <motion.button 
+                        whileTap={{ scale: 0.96 }}
                         onClick={() => handleView(pdfItem.fileUrl)} 
-                        className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-700 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm"
+                        /* Removed hover:bg and gloss translation for 1 solid color */
+                        className="w-full relative overflow-hidden bg-[#5F9D08] text-white py-4 rounded-[1.2rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-green-100 transition-all active:scale-95"
                       >
-                        <FiEye size={16} /> View
-                      </button>
-                      <button 
-                        onClick={() => setDeleteConfirm({show: true, id: id})}
-                        className="w-12 bg-slate-50 hover:bg-red-50 hover:text-red-500 text-slate-400 rounded-xl flex items-center justify-center transition-all"
-                      >
-                        <FiTrash2 size={18} />
-                      </button>
+                        <FiEye size={18} /> 
+                        <span>View Asset</span>
+                      </motion.button>
+                      
+                      {/* SECONDARY: Uniform Multi-color Toolbar */}
+                      <div className="grid grid-cols-3 gap-2">
+                        {/* Download (Emerald) */}
+                        <button 
+                          onClick={() => handleDownload(pdfItem.fileUrl, pdfItem.fileName)} 
+                          className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl border border-emerald-100 bg-emerald-50 text-[#5F9D08] transition-all active:scale-90"
+                        >
+                          <FiDownload size={18} />
+                          <span className="text-[8px] font-black uppercase tracking-tighter">Save</span>
+                        </button>
+
+                        {/* Rename (Amber) */}
+                        <button 
+                          onClick={() => {
+                            setRenameModal({ show: true, id: id, oldName: pdfItem.fileName });
+                            setNewName(pdfItem.fileName);
+                          }}
+                          className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl border border-amber-100 bg-amber-50 text-amber-600 transition-all active:scale-90"
+                        >
+                          <FiEdit2 size={16} />
+                          <span className="text-[8px] font-black uppercase tracking-tighter">Edit</span>
+                        </button>
+
+                        {/* Delete (Rose) */}
+                        <button 
+                          onClick={() => setDeleteConfirm({show: true, id: id})}
+                          className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl border border-rose-100 bg-rose-50 text-rose-600 transition-all active:scale-90"
+                        >
+                          <FiTrash2 size={18} />
+                          <span className="text-[8px] font-black uppercase tracking-tighter">Purge</span>
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 );
               })}
             </div>
           ) : (
-            /* Empty State */
-            <div className="bg-white rounded-[3rem] border-2 border-dashed border-slate-200 py-20 px-10 flex flex-col items-center text-center">
-              <div className="bg-slate-50 p-8 rounded-full mb-6">
-                <FiInbox size={60} className="text-slate-200" />
-              </div>
-              <h3 className="text-2xl font-bold text-slate-800 mb-2">No resumes found</h3>
-              <p className="text-slate-500 max-w-sm mb-8">Your vault is currently empty. Upload your first professional resume to get started.</p>
-              <button 
-                onClick={() => setShowModal(true)}
-                className="bg-[#5F9D08] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-green-100"
-              >
-                Upload Now
-              </button>
+            <div className="bg-white rounded-[3.5rem] border-4 border-dashed border-slate-100 py-32 flex flex-col items-center text-center">
+              <FiInbox size={80} className="text-slate-100 mb-6" />
+              <h3 className="text-2xl font-black text-slate-300 uppercase tracking-widest">No resumes found</h3>
             </div>
           )}
         </div>
       </div>
 
-      {/* Upload Modal */}
+      {/* Upload Modal - Removed Blurry Backdrop */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[150] p-4" onClick={() => setShowModal(false)}>
+          <div className="fixed inset-0 bg-slate-900/60 flex justify-center items-center z-[250] p-4" onClick={() => setShowModal(false)}>
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white p-8 rounded-[2.5rem] max-w-md w-full shadow-2xl" 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white p-10 rounded-[3rem] max-w-md w-full shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)]" 
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-black text-slate-900">Upload Resume</h3>
-                <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><FiX size={24}/></button>
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Upload Vault</h3>
+                <button onClick={() => setShowModal(false)} className="text-slate-300 hover:text-slate-900 transition-colors"><FiX size={28}/></button>
               </div>
               
-              <div className="relative group border-2 border-dashed border-slate-200 rounded-[2rem] p-10 text-center hover:border-[#5F9D08] hover:bg-green-50/20 transition-all cursor-pointer">
+              <div className="relative group border-4 border-dashed border-slate-100 rounded-[2.5rem] p-12 text-center hover:border-[#5F9D08] hover:bg-green-50/20 transition-all cursor-pointer">
                 <input 
-                  type="file" 
-                  accept="application/pdf" 
+                  type="file" accept="application/pdf" 
                   onChange={e => setNewPdf({ ...newPdf, file: e.target.files[0] })} 
                   className="absolute inset-0 opacity-0 cursor-pointer z-10" 
                 />
-                <div className="bg-slate-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-[#5F9D08] group-hover:text-white transition-all">
-                  <FiUploadCloud size={30} />
-                </div>
-                <p className="text-slate-700 font-bold mb-1">
+                <FiUploadCloud size={40} className="mx-auto mb-4 text-slate-200 group-hover:text-[#5F9D08] transition-colors" />
+                <p className="text-slate-700 font-black text-sm uppercase tracking-tight truncate max-w-full">
                   {newPdf.file ? newPdf.file.name : "Choose PDF file"}
                 </p>
-                <p className="text-xs text-slate-400">PDF format only (Max 2MB)</p>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-2">Max 2MB</p>
               </div>
 
-              <div className="flex gap-3 mt-8">
-                <button onClick={() => setShowModal(false)} className="flex-1 py-3.5 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-all">Cancel</button>
+              <div className="flex gap-4 mt-10">
+                <button onClick={() => setShowModal(false)} className="flex-1 py-4 text-slate-400 font-black uppercase text-xs tracking-widest hover:text-slate-600 transition-colors">Cancel</button>
                 <button 
-                  onClick={handleUpload} 
-                  disabled={!newPdf.file} 
-                  className="flex-1 bg-[#5F9D08] text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-100 disabled:opacity-30 disabled:shadow-none transition-all"
-                >
-                  Confirm Upload
-                </button>
+                onClick={handleUpload} 
+                disabled={!newPdf.file || isUploading} 
+                className="flex-[2] bg-[#5F9D08] text-white py-4 rounded-2xl font-black shadow-xl shadow-green-100 disabled:opacity-50 disabled:shadow-none transition-all uppercase text-xs tracking-widest active:scale-95 flex items-center justify-center gap-2"
+              >
+                {isUploading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+                    Uploading...
+                  </>
+                ) : (
+                  "Confirm Upload"
+                )}
+              </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal - Removed Blurry Backdrop */}
       <AnimatePresence>
         {deleteConfirm.show && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[160] p-4">
-             <motion.div 
-                initial={{ scale: 0.9, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }} 
-                className="bg-white p-8 rounded-[2.5rem] shadow-2xl max-w-sm w-full text-center"
+          <div className="fixed inset-0 bg-slate-900/60 flex justify-center items-center z-[260] p-4">
+             <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }}
+                className="bg-white p-10 rounded-[3rem] shadow-2xl max-w-sm w-full text-center"
              >
-                <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
                   <FiAlertCircle size={40} />
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-2">Are you sure?</h3>
-                <p className="text-slate-500 font-medium mb-8">This action is permanent and cannot be undone.</p>
-                <div className="flex gap-3">
-                   <button onClick={() => setDeleteConfirm({show:false})} className="flex-1 py-3.5 text-slate-500 font-bold hover:bg-slate-50 rounded-xl">No, keep it</button>
-                   <button onClick={processDelete} className="flex-1 py-3.5 bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-100">Yes, delete</button>
+                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-2">Delete File?</h3>
+                <p className="text-slate-400 font-medium text-sm mb-10 leading-relaxed px-4">This action is permanent and cannot be undone.</p>
+                <div className="flex gap-4">
+                   <button onClick={() => setDeleteConfirm({show:false})} className="flex-1 py-4 text-slate-400 font-black uppercase text-xs tracking-widest">Cancel</button>
+                   <button onClick={processDelete} className="flex-1 bg-rose-500 text-white rounded-2xl font-black shadow-xl shadow-rose-100 uppercase text-xs tracking-widest">Delete</button>
                 </div>
              </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Rename Modal */}
+      <AnimatePresence>
+        {renameModal.show && (
+          <div className="fixed inset-0 bg-slate-900/60 flex justify-center items-center z-[270] p-4">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-10 rounded-[3rem] max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+              <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-6">Rename File</h3>
+              <div className="mb-8">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 block">New Filename</label>
+                <input 
+                  type="text" 
+                  value={newName} 
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 focus:border-[#5F9D08] outline-none font-bold transition-all"
+                  placeholder="Enter new name..."
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-4">
+                <button onClick={() => setRenameModal({show:false})} className="flex-1 py-4 text-slate-400 font-black uppercase text-xs tracking-widest">Cancel</button>
+                <button onClick={handleRename} className="flex-[2] bg-amber-500 text-white py-4 rounded-2xl font-black shadow-xl uppercase text-xs tracking-widest active:scale-95 transition-all">Save Changes</button>
+              </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
