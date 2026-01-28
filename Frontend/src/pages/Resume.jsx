@@ -1,313 +1,312 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import UserNavbar from '../components/Header/UserNavbar';
 import Sidebar from '../components/SideBar';
-import { FiMenu } from 'react-icons/fi';
 import NavSearchBar from '../components/Header/NavSearchBar';
 import axios from 'axios';
+import { 
+  FiX, FiCheck, FiMoreVertical, FiEdit2, FiTrash2, 
+  FiEye, FiUploadCloud, FiFileText, FiSquare, FiCheckSquare,
+  FiAlertCircle, FiDownload, FiSearch, FiInbox
+} from 'react-icons/fi';
 
 const Resume = () => {
   const [pdfs, setPdfs] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [newPdf, setNewPdf] = useState({ fileName: '', file: null });
-  const [showDropdownIndex, setShowDropdownIndex] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  
+  // Selection & UI State
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null, bulk: false });
 
-  // ✅ FIXED: Normalize Backend URL with /api prefix
   const base = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-  const API_BASE = `${base}/api/upload/resume`;
+  const API_URL = `${base}/api/upload/resume`; 
 
-  // Helper to add download flag to Cloudinary URL for forced download
-  const getDownloadUrl = (fileUrl) => {
-    if (!fileUrl) return "";
-    return fileUrl.replace("/upload/", "/upload/fl_attachment:");
+  const triggerNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000);
   };
 
-  const toggleModal = () => setShowModal(!showModal);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const allowedTypes = [
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ];
-
-    const maxSize = 2 * 1024 * 1024; // 2MB
-
-    if (!allowedTypes.includes(file.type)) {
-      alert("Invalid file type. Only PDF, DOC, or DOCX files are allowed.");
-      return;
-    }
-
-    if (file.size > maxSize) {
-      alert("File size exceeds 2MB. Please upload a smaller file.");
-      return;
-    }
-
-    setNewPdf({ ...newPdf, file });
-  };
-
-  // ✅ FIXED: Fetch resumes using standardized API_BASE
   const fetchResumes = async () => {
     try {
-      const response = await axios.get(API_BASE, {
-        withCredentials: true,
-      });
-
-      // Handle the data structure returned by your backend
-      const rawResumes = response.data.resumes || [];
-      const fetchedResumes = rawResumes.map(r => ({
-        fileName: r.fileName,
-        fileUrl: r.fileUrl,
-        publicId: r.publicId,
-      }));
-
-      setPdfs(fetchedResumes);
-    } catch (error) {
-      console.error("Failed to fetch resumes:", error);
+      const response = await axios.get(API_URL, { withCredentials: true });
+      setPdfs(response.data.resumes || []);
+    } catch (error) { 
+        triggerNotification("Failed to load resumes", "error");
     }
   };
 
   useEffect(() => {
     fetchResumes();
-  }, []);
-
-  // ✅ FIXED: Handle upload with standardized API_BASE
-  const handleUpload = async () => {
-    if (newPdf.file) {
-      try {
-        const formData = new FormData();
-        formData.append("resume", newPdf.file);
-
-        await axios.post(API_BASE, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data"
-          },
-          withCredentials: true 
-        });
-
-        fetchResumes();
-        setNewPdf({ fileName: '', file: null });
-        toggleModal();
-      } catch (error) {
-        console.error("Upload failed:", error);
-        alert("Failed to upload resume. Please try again.");
-      }
-    }
-  };
-
-  // ✅ FIXED: Handle delete with standardized API_BASE
-  const handleDelete = async (index) => {
-    const resumeToDelete = pdfs[index];
-    const publicId = resumeToDelete.publicId;
-
-    if (!publicId) {
-      console.warn("No publicId found.");
-      return;
-    }
-
-    try {
-      await axios.delete(`${API_BASE}/${encodeURIComponent(publicId)}`, {
-        withCredentials: true,
-      });
-
-      setPdfs(prev => prev.filter((_, i) => i !== index));
-      setShowDropdownIndex(null);
-    } catch (err) {
-      console.error("Delete failed:", err);
-      alert("Failed to delete resume");
-    }
-  };
-
-  const toggleDropdown = (index) => {
-    setShowDropdownIndex(showDropdownIndex === index ? null : index);
-  };
-
-  useEffect(() => {
     const handleResize = () => setScreenWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const isMobile = screenWidth < 768;
+  const handleView = (fileUrl) => {
+    if (!fileUrl) return;
+    window.open(fileUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleUpload = async () => {
+    if (!newPdf.file) return;
+    if (newPdf.file.type !== "application/pdf") {
+        triggerNotification("Only PDF resumes are supported", "error");
+        return;
+    }
+    const formData = new FormData();
+    formData.append("resume", newPdf.file);
+    try {
+      await axios.post(API_URL, formData, { headers: { "Content-Type": "multipart/form-data" }, withCredentials: true });
+      fetchResumes();
+      setShowModal(false);
+      setNewPdf({ fileName: '', file: null });
+      triggerNotification("Resume uploaded successfully!");
+    } catch (error) { triggerNotification("Upload failed", "error"); }
+  };
+
+    const processDelete = async () => {
+    try {
+      if (deleteConfirm.bulk) {
+        // Deleting multiple files
+        for (const id of selectedIds) {
+          await axios.delete(`${API_URL}/${encodeURIComponent(id)}`, { withCredentials: true });
+        }
+        setSelectedIds([]);
+      } else {
+        // Deleting single file
+        await axios.delete(`${API_URL}/${encodeURIComponent(deleteConfirm.id)}`, { withCredentials: true });
+      }
+      fetchResumes(); // Refresh the list
+      setDeleteConfirm({ show: false, id: null, bulk: false });
+      triggerNotification("Action completed successfully!");
+    } catch (err) { 
+      triggerNotification("Some items could not be deleted", "error"); 
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === pdfs.length) setSelectedIds([]);
+    else setSelectedIds(pdfs.map(p => p._id || p.id));
+  };
 
   return (
-    <div className="bg-gray-50 min-h-screen pt-16">
-      <NavSearchBar
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        showHamburger={true}
-      />
-      <div className='flex flex-row min-h-screen'>
-        {!isMobile && (
-          <div className="hidden lg:block fixed top-20 left-0 z-30">
-            <Sidebar isOpen={true} isMobile={false} />
-          </div>
-        )}
-        <AnimatePresence>
-          {isSidebarOpen && (
-            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isMobile={true} />
-          )}
-        </AnimatePresence>
-
-        <motion.div
-          className="w-full mx-6 mt-6 p-4 lg:ml-64"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <h2 className="text-2xl font-bold text-gray-800 border-l-4 border-[#5F9D08] pl-3">My Resume</h2>
-              <p className="text-gray-600 mt-2 pl-4">Manage your resume documents for job applications</p>
-            </motion.div>
-
-            <motion.button
-              onClick={toggleModal}
-              className="flex items-center bg-gradient-to-r from-[#5F9D08] to-[#4A8B07] text-white px-5 py-2.5 rounded-lg mt-4 md:mt-0 font-medium shadow-sm hover:shadow-md transition-all duration-300"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add New Resume
-            </motion.button>
-          </div>
-
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+    <div className="bg-[#F8FAFC] min-h-screen pt-16 relative overflow-x-hidden font-sans">
+      
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {notification.show && (
+          <motion.div 
+            initial={{ y: 50, opacity: 0, x: "-50%" }} 
+            animate={{ y: 0, opacity: 1, x: "-50%" }} 
+            exit={{ y: 20, opacity: 0, x: "-50%" }}
+            className={`fixed bottom-10 left-1/2 z-[140] px-6 py-3 rounded-2xl shadow-2xl text-white font-bold flex items-center gap-3 ${notification.type === 'success' ? 'bg-[#10B981]' : 'bg-red-500'}`}
           >
-            {pdfs.length > 0 ? (
-              pdfs.map((pdfItem, index) => (
-                <motion.div
-                  key={index}
-                  className="relative p-5 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  whileHover={{ y: -5 }}
-                >
-                  <div className="flex items-center">
-                    <div className="bg-green-50 p-3 rounded-lg mr-4 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#5F9D08]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <div className="overflow-hidden">
-                      <p className="font-medium text-gray-800 truncate">{pdfItem.fileName || "Resume File"}</p>
-                      <p className="text-xs text-gray-500 mt-1">PDF Document</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex justify-between items-center">
-                    <a
-                      href={pdfItem.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#5F9D08] text-sm font-medium hover:underline flex items-center"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      View
-                    </a>
-
-                    <button
-                      onClick={() => toggleDropdown(index)}
-                      className="p-2 text-gray-500 hover:bg-gray-100 rounded-full"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path d="M12 5v.01M12 12v.01M12 19v.01" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  <AnimatePresence>
-                    {showDropdownIndex === index && (
-                      <motion.div
-                        className="absolute right-4 top-16 bg-white border rounded-lg shadow-lg z-10 py-1 w-32"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                      >
-                        <a
-                          href={getDownloadUrl(pdfItem.fileUrl)}
-                          download={pdfItem.fileName}
-                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          Download
-                        </a>
-                        <button
-                          onClick={() => handleDelete(index)}
-                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                        >
-                          Delete
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-16 bg-white rounded-xl shadow-sm">
-                <p className="text-gray-600">No resumes uploaded yet.</p>
-              </div>
-            )}
+            {notification.type === 'success' ? <FiCheck /> : <FiAlertCircle />}
+            {notification.message}
           </motion.div>
+        )}
+      </AnimatePresence>
 
+      <NavSearchBar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} showHamburger={true} />
+      
+      <div className='flex flex-col lg:flex-row min-h-screen'>
+        {screenWidth >= 1024 && <div className="fixed top-20 left-0 z-30 w-64"><Sidebar isOpen={true} isMobile={false} /></div>}
+        
+        <div className="flex-1 p-4 sm:p-10 lg:ml-64">
+          
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+             <div>
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight">Resume Vault</h2>
+                <p className="text-slate-500 font-medium mt-1">Manage and store your professional resumes.</p>
+             </div>
+             <div className="flex items-center gap-3 w-full md:w-auto">
+               {pdfs.length > 0 && (
+                 <button 
+                  onClick={toggleSelectAll}
+                  className="p-3 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+                  title="Select All"
+                 >
+                   {selectedIds.length === pdfs.length ? <FiCheckSquare size={20} className="text-[#5F9D08]"/> : <FiSquare size={20}/>}
+                 </button>
+               )}
+               <button 
+                onClick={() => setShowModal(true)} 
+                className="flex-1 md:flex-none bg-[#5F9D08] hover:bg-[#4d8006] text-white px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-200/50"
+               >
+                 <FiUploadCloud size={20} /> <span>Upload New</span>
+               </button>
+             </div>
+          </div>
+
+          {/* Bulk Actions Bar */}
           <AnimatePresence>
-            {showModal && (
-              <motion.div
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50"
-                onClick={toggleModal}
+            {selectedIds.length > 0 && (
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }} 
+                animate={{ y: 0, opacity: 1 }} 
+                exit={{ y: 20, opacity: 0 }}
+                className="mb-6 bg-slate-900 text-white p-4 rounded-2xl flex items-center justify-between shadow-xl"
               >
-                <motion.div
-                  className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full mx-4"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <h3 className="text-xl font-bold text-gray-800 mb-6">Upload Resume</h3>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#5F9D08]">
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <p className="text-sm text-gray-600">
-                        {newPdf.file ? newPdf.file.name : 'Select or drag and drop your file'}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500">PDF, DOC, DOCX up to 2MB</p>
-                    </label>
-                  </div>
-                  <div className="flex justify-end space-x-3 mt-6">
-                    <button onClick={toggleModal} className="px-4 py-2 text-gray-700">Cancel</button>
-                    <button
-                      onClick={handleUpload}
-                      disabled={!newPdf.file}
-                      className="bg-[#5F9D08] text-white px-5 py-2 rounded-lg disabled:opacity-50"
-                    >
-                      Upload
-                    </button>
-                  </div>
-                </motion.div>
+                <span className="font-bold ml-2">{selectedIds.length} Resumes Selected</span>
+                <div className="flex gap-2">
+                  <button onClick={() => setSelectedIds([])} className="px-4 py-2 hover:bg-white/10 rounded-lg transition-all text-sm font-bold">Cancel</button>
+                  <button 
+                    onClick={() => setDeleteConfirm({show: true, bulk: true})}
+                    className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition-all text-sm font-bold flex items-center gap-2"
+                  >
+                    <FiTrash2 size={16}/> Delete
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
+
+          {/* Main Content Grid */}
+          {pdfs.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              {pdfs.map((pdfItem, index) => {
+                const id = pdfItem._id || pdfItem.id;
+                const isSelected = selectedIds.includes(id);
+
+                return (
+                  <motion.div 
+                    key={id || index}
+                    layout
+                    className={`relative bg-white rounded-[2rem] border-2 p-6 transition-all duration-300 group ${isSelected ? 'border-[#5F9D08] shadow-md' : 'border-transparent hover:border-slate-200 shadow-sm hover:shadow-md'}`}
+                  >
+                    {/* Selection Checkbox */}
+                    <div 
+                      onClick={() => toggleSelect(id)}
+                      className={`absolute top-5 right-5 cursor-pointer p-1 rounded-md transition-all ${isSelected ? 'text-[#5F9D08] opacity-100' : 'text-slate-300 opacity-0 group-hover:opacity-100'}`}
+                    >
+                      {isSelected ? <FiCheckSquare size={22}/> : <FiSquare size={22}/>}
+                    </div>
+
+                    <div className="flex flex-col items-center text-center">
+                      <div className={`p-5 rounded-2xl mb-4 transition-colors ${isSelected ? 'bg-green-50 text-[#5F9D08]' : 'bg-slate-50 text-slate-400 group-hover:bg-red-50 group-hover:text-red-500'}`}>
+                        <FiFileText size={40} />
+                      </div>
+                      <h4 className="font-bold text-slate-800 truncate w-full px-2 text-lg mb-1">{pdfItem.fileName}</h4>
+                      <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
+                        <span className="w-2 h-2 rounded-full bg-slate-200"></span>
+                        PDF Document
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 mt-8 pt-5 border-t border-slate-50">
+                      <button 
+                        onClick={() => handleView(pdfItem.fileUrl)} 
+                        className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-700 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm"
+                      >
+                        <FiEye size={16} /> View
+                      </button>
+                      <button 
+                        onClick={() => setDeleteConfirm({show: true, id: id})}
+                        className="w-12 bg-slate-50 hover:bg-red-50 hover:text-red-500 text-slate-400 rounded-xl flex items-center justify-center transition-all"
+                      >
+                        <FiTrash2 size={18} />
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Empty State */
+            <div className="bg-white rounded-[3rem] border-2 border-dashed border-slate-200 py-20 px-10 flex flex-col items-center text-center">
+              <div className="bg-slate-50 p-8 rounded-full mb-6">
+                <FiInbox size={60} className="text-slate-200" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">No resumes found</h3>
+              <p className="text-slate-500 max-w-sm mb-8">Your vault is currently empty. Upload your first professional resume to get started.</p>
+              <button 
+                onClick={() => setShowModal(true)}
+                className="bg-[#5F9D08] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-green-100"
+              >
+                Upload Now
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Upload Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[150] p-4" onClick={() => setShowModal(false)}>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white p-8 rounded-[2.5rem] max-w-md w-full shadow-2xl" 
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-black text-slate-900">Upload Resume</h3>
+                <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><FiX size={24}/></button>
+              </div>
+              
+              <div className="relative group border-2 border-dashed border-slate-200 rounded-[2rem] p-10 text-center hover:border-[#5F9D08] hover:bg-green-50/20 transition-all cursor-pointer">
+                <input 
+                  type="file" 
+                  accept="application/pdf" 
+                  onChange={e => setNewPdf({ ...newPdf, file: e.target.files[0] })} 
+                  className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                />
+                <div className="bg-slate-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-[#5F9D08] group-hover:text-white transition-all">
+                  <FiUploadCloud size={30} />
+                </div>
+                <p className="text-slate-700 font-bold mb-1">
+                  {newPdf.file ? newPdf.file.name : "Choose PDF file"}
+                </p>
+                <p className="text-xs text-slate-400">PDF format only (Max 2MB)</p>
+              </div>
+
+              <div className="flex gap-3 mt-8">
+                <button onClick={() => setShowModal(false)} className="flex-1 py-3.5 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-all">Cancel</button>
+                <button 
+                  onClick={handleUpload} 
+                  disabled={!newPdf.file} 
+                  className="flex-1 bg-[#5F9D08] text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-100 disabled:opacity-30 disabled:shadow-none transition-all"
+                >
+                  Confirm Upload
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirm.show && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[160] p-4">
+             <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                className="bg-white p-8 rounded-[2.5rem] shadow-2xl max-w-sm w-full text-center"
+             >
+                <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <FiAlertCircle size={40} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-2">Are you sure?</h3>
+                <p className="text-slate-500 font-medium mb-8">This action is permanent and cannot be undone.</p>
+                <div className="flex gap-3">
+                   <button onClick={() => setDeleteConfirm({show:false})} className="flex-1 py-3.5 text-slate-500 font-bold hover:bg-slate-50 rounded-xl">No, keep it</button>
+                   <button onClick={processDelete} className="flex-1 py-3.5 bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-100">Yes, delete</button>
+                </div>
+             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
