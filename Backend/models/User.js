@@ -43,7 +43,8 @@ const userSchema = new mongoose.Schema(
     { type: mongoose.Schema.Types.ObjectId,
       ref: "Internship" },
   ],
-
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
     //  Add this resume field here:
     resume: [
       {

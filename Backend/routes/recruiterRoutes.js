@@ -21,6 +21,7 @@ import {
   getRecruiterJobs,
   getAllJobs,
   getRecruiterInternships,
+  updateInternship,
   closeInternship,
   openInternship,
   deleteInternship,
@@ -49,7 +50,8 @@ router.post('/postInternship', protect, isRecruiter,upload.single("file"), postI
 router.get('/myJobs', protect, isRecruiter, getRecruiterJobs); // keep only one
 router.get('/jobs', getAllJobs);
 router.get('/jobs/:id', protect, getJobById);
-router.put('/updateJob/:id', protect, isRecruiter, updateJob);
+router.put('/updateJob/:id', protect, isRecruiter, upload.single("file"), updateJob);
+router.put('/updateInternship/:id', protect, isRecruiter, upload.single("file"), updateInternship);
 router.delete('/deleteJob/:id', protect, isRecruiter, deleteJob);
 router.post('/closeJob/:id', protect, isRecruiter, closeJob);
 router.post('/openJob/:id', protect, isRecruiter, openJob);

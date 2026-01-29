@@ -261,14 +261,37 @@ export const updateRecruiterProfile = async (req, res) => {
       const job = await Job.findById(jobId);
       if (!job) return res.status(404).json({ message: "Job not found" });
 
-      Object.assign(job, req.body);
+      const updates = { ...req.body };
+      if (req.file) {
+      // Use your existing helper to upload the new document
+      const fileUrl = await uploadToCloudinary(req.file.buffer, "job_docs");
+      updates.jobDescriptionDocument = fileUrl; // Add the Cloudinary URL to the update object
+    }
+      const updatedJob = await Job.findByIdAndUpdate(
+      jobId,
+      updates,
+      { new: true, runValidators: true }
+    );
 
-      const updatedJob = await job.save();
       res.status(200).json({ success: true, job: updatedJob });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   };
+
+  export const updateInternship = async (req, res) => {
+  try {
+    const updates = { ...req.body };
+    if (req.file) {
+      const fileUrl = await uploadToCloudinary(req.file.buffer, "internship_docs");
+      updates.internshipDescriptionDocument = fileUrl;
+    }
+    const updated = await Internship.findByIdAndUpdate(req.params.id, updates, { new: true });
+    res.status(200).json({ success: true, internship: updated });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
   // POST INTERNSHIP
   // export const postInternship = async (req, res) => {

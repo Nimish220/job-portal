@@ -4,6 +4,8 @@ import LandingPage from './pages/LandingPage';
 import RecruiterLogin from './RecruiterPages/Login_SignUp/RecruiterLogin';
 import RecruiterRegister from './RecruiterPages/Login_SignUp/RecruiterRegister';
 import AllJobs_ActiveJobs from './RecruiterPages/AllJobs_ActiveJobs';
+import EditJob from './RecruiterPages/EditJob.jsx';
+import EditInternship from './RecruiterPages/EditInternship.jsx';
 import AllJobs_ClosedJobs from './RecruiterPages/AllJobs_ClosedJobs.jsx';
 import RecruiterProfile from './RecruiterPages/Recruiter Profile/RecruiterProfile';
 import RecruiterLogout from './RecruiterPages/Login_SignUp/RecruiterLogout';
@@ -82,6 +84,8 @@ function App() {
         {/* Recruiter Routes */}
         <Route path='/recruiters/logout' element={<ProtectedRoute><RecruiterLogout /></ProtectedRoute>} />
         <Route path='/recruiters/jobs/active' element={<ProtectedRoute allowedRole="recruiter"><AllJobs_ActiveJobs /></ProtectedRoute>} />
+        <Route path="/recruiters/edit-job/:id" element={<EditJob />} />
+        <Route path="/recruiters/edit-internship/:id" element={<EditInternship />} />
         <Route path='/recruiters/jobs/closed' element={<ProtectedRoute allowedRole="recruiter"><AllJobs_ClosedJobs /></ProtectedRoute>} />
         <Route path='/recruiters/notifications' element={<ProtectedRoute allowedRole="recruiter"><NotificationsRecr /></ProtectedRoute>} />
         <Route path='/recruiters/getProfile' element={<ProtectedRoute allowedRole="recruiter"><RecruiterProfile /></ProtectedRoute>} />

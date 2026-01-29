@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { FiEdit } from 'react-icons/fi';
 
 const JobCard = ({
   jobTitle,
@@ -18,6 +19,7 @@ const JobCard = ({
   actionButtonLink,
   onSecondaryButtonClick,
   statusText,
+  onEdit,
 }) => {
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 });
 
@@ -27,13 +29,26 @@ const JobCard = ({
       initial={{ opacity: 0, y: 40 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      whileHover={{
+      /*whileHover={{
         scale: 1.02,
         boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
         transition: { duration: 0.3 },
-      }}
-      className="bg-white p-6 rounded-lg shadow-md flex flex-col lg:flex-row justify-between gap-6 w-full"
+      }}*/
+     className="relative bg-white p-6 rounded-lg shadow-md flex flex-col lg:flex-row justify-between gap-6 w-full"
     >
+        {onEdit && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            /* right-2 pins it to the absolute edge of the box */
+            className="absolute top-4 right-2 lg:top-6 lg:right-3 p-2 text-gray-400 cursor-pointer z-20 bg-transparent border-none outline-none"
+            title="Edit Posting"
+          >
+            <FiEdit size={20} />
+          </button>
+        )}
       {/* Left Section */}
       <div className="flex-1">
         {/* Header */}
