@@ -9,7 +9,8 @@ import { FaHome,FaBell } from "react-icons/fa";
 import AmazonLogo from '../assets/images/AmazonLogo.png';
 import ProfileImage from '../assets/images/Profile_pics/1.jpg';
 import axios from "axios";
-import { toast} from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 function PostJob_Job() {
   // Animation variants
   const fadeIn = {
@@ -82,7 +83,16 @@ function PostJob_Job() {
   const [file, setFile] = useState(null);
 
   const handleFileUpload = (e) => {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      if (selectedFile) {
+          if (selectedFile.type !== "application/pdf") {
+              toast.error("Invalid file type. Please upload a PDF.",{position: "top-center",});
+              e.target.value = ""; // Clear input
+              setFile(null);
+              return;
+          }
+          setFile(selectedFile);
+      }
   };
   const fileInputRef = React.useRef(null);
   const handleRemoveFile = () => {
@@ -97,7 +107,7 @@ function PostJob_Job() {
     const formData = new FormData();
     formData.append("jobRole", jobRole);
     formData.append("jobDescription", jobDescription);
-    formData.append("experience", String(experience));
+    formData.append("experience", String(experience)|| "0");
     formData.append("ctc", String(ctc));
     formData.append("skillsRequired", skillsRequired);
     formData.append("location", location);
@@ -110,6 +120,17 @@ function PostJob_Job() {
         formData.append("file", file); 
     }
 
+    if (!jobRole || !jobDescription || !ctc || !selectedJobType) {
+        return toast.error("Please fill in the required fields (Job Role, CTC, and Description)", {
+            position: "top-center"
+        });
+    }
+    // Safety Check: CTC should be a positive number for a Job
+    if (!ctc || Number(ctc) <= 0) {
+        return toast.error("Job CTC must be greater than 0. If this is unpaid, please post as an Internship.", {
+            position: "top-center"
+        });
+    }
     // 1. Sabse pehle Loading Toast dikhayein
     const loadingToast = toast.loading("Uploading documents and posting job...");
 
@@ -187,11 +208,11 @@ function PostJob_Job() {
                   <img src={NotificationsIcon} alt="Notifications" className="w-8 h-8" />
                 </Link> */}
                 <Link to="/recruiters/notifications">
-                                                      <FaBell className="text-2xl w-8 h-8  cursor-pointer hover:text-gray-300" />
-                                                    </Link>
+                    <FaBell className="text-2xl w-8 h-8  cursor-pointer hover:text-gray-300" />
+                    </Link>
                 <Link to="/recruiters/jobs/active">
-                                      <FaHome className="text-2xl w-8 h-8  cursor-pointer hover:text-gray-300" />
-                                    </Link>
+                    <FaHome className="text-2xl w-8 h-8  cursor-pointer hover:text-gray-300" />
+                    </Link>
                 <Link to="/recruiters/getProfile" className="flex items-center gap-2">
                   <div className="rounded-full bg-gray-300 w-6 h-6 sm:w-8 sm:h-8">
                     <img src={ProfileImage} alt="" className="w-full h-full rounded-full" />
@@ -307,9 +328,17 @@ function PostJob_Job() {
                 <motion.input
                   type="number"
                   min="0"
+                  step="1"
                   value={experience}
-                  onChange={(e) => setExperience(e.target.value)}
-                  placeholder="e.g., 2"
+                  onWheel={(e) => e.target.blur()} // Stop scroll jumps
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // Stop negative numbers and resets
+                    if (val === "" || (Number(val) >= 0 && !val.startsWith('-'))) {
+                        setExperience(val);
+                    }
+                  }}
+                  placeholder="e.g: 2"
                   className="w-full p-2 border border-gray-300 rounded"
                 />
               </motion.div>
@@ -318,11 +347,21 @@ function PostJob_Job() {
                 <label className="block text-gray-700 font-bold">CTC (in LPA)</label>
                 <motion.input
                   type="number"
-                  min="0"
+                  min="0.1"
+                  step="0.01" // 1. CRITICAL: Allows decimals like 7.5 or 8.2 without rounding/glitching
                   value={ctc}
-                  onChange={(e) => setCtc(e.target.value)}
-                  placeholder="e.g., 10"
-                  className="w-full p-2 border border-gray-300 rounded"
+                  // Stop Mouse Wheel from changing numbers
+                  onWheel={(e) => e.target.blur()}
+                  onChange={(e) => {
+                      const val = e.target.value;
+                      // 2. Control logic: Only update if it's a positive number or an empty string
+                      if (val === "" || (Number(val) >= 0 && !val.startsWith('-'))) {
+                          setCtc(val);
+                      }
+                  }}
+                  placeholder="e.g: 10"
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none"
+                  required
                 />
               </motion.div>
 
@@ -345,6 +384,7 @@ function PostJob_Job() {
                   onChange={(e) => setQualifications(e.target.value)}
                   placeholder="e.g., B.Tech"
                   className="w-full p-2 border border-gray-300 rounded"
+                  required
                 />
               </motion.div>
 
@@ -355,30 +395,8 @@ function PostJob_Job() {
                   onChange={(e) => setEligibilityCriteria(e.target.value)}
                   placeholder="e.g., Minimum CGPA 7.5"
                   className="w-full p-2 border border-gray-300 rounded"
+                  required
                 />
-              </motion.div>
-
-              <motion.div variants={formFieldVariants}>
-                <label className="block text-gray-700 font-bold">Job Description Document (PDF/Image)</label>
-                <input
-                  ref={fileInputRef} // Replace 'key' with 'ref'
-                  type="file"
-                  onChange={handleFileUpload}
-                  className="w-full p-2 border border-gray-300 rounded bg-white mt-1"
-                  accept=".pdf,.docx,image/*"
-                />
-                {/* NEW: Remove file button */}
-                {file && (
-                  <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border border-green-200">
-                    <span className="text-xs text-gray-600 truncate mr-2">Selected: {file.name}</span>
-                    <button 
-                      type="button" 
-                      onClick={handleRemoveFile} 
-                      className="text-xs text-red-500 hover:underline font-medium"
-                    >
-                      Remove
-                    </button>
-                  </div> )}
               </motion.div>
 
               <motion.div variants={formFieldVariants}>
@@ -389,6 +407,7 @@ function PostJob_Job() {
                   onChange={(e) => setRequiredDocuments(e.target.value)}
                   placeholder="e.g., Resume, Cover Letter"
                   className="w-full p-2 border border-gray-300 rounded"
+                  required
                 />
               </motion.div>
 
@@ -418,8 +437,32 @@ function PostJob_Job() {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g., Remote, Bangalore"
-                  className="w-full p-2 border border-gray-300 rounded"
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none"
+                  required
                 />
+              </motion.div>
+              
+              <motion.div variants={formFieldVariants}>
+                <label className="block text-gray-700 font-bold">Job Description Document (PDF)</label>
+                <input
+                  ref={fileInputRef} // Replace 'key' with 'ref'
+                  type="file"
+                  onChange={handleFileUpload}
+                  className="w-full p-2 border border-gray-300 rounded bg-white mt-1"
+                  accept="application/pdf"
+                />
+                {/* NEW: Remove file button */}
+                {file && (
+                  <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border border-green-200">
+                    <span className="text-xs text-gray-600 truncate mr-2">Selected: {file.name}</span>
+                    <button 
+                      type="button" 
+                      onClick={handleRemoveFile} 
+                      className="text-xs text-red-500 hover:underline font-medium"
+                    >
+                      Remove
+                    </button>
+                  </div> )}
               </motion.div>
 
               <motion.div variants={formFieldVariants}>
@@ -450,6 +493,18 @@ function PostJob_Job() {
           </motion.div>
         </div>
       </div>
+      <ToastContainer 
+        position="top-center" 
+        autoClose={3000} 
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </div>
   );
 }

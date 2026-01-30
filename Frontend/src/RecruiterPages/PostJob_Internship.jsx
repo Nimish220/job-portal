@@ -9,7 +9,8 @@ import AmazonLogo from '../assets/images/AmazonLogo.png';
 import { FaHome,FaBell } from 'react-icons/fa';
 import ProfileImage from '../assets/images/Profile_pics/1.jpg';
 import axios from 'axios';
-import { toast} from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 function PostJob_Internship() {
    //  Ref define 
     const fileInputRef = React.useRef(null);
@@ -60,7 +61,7 @@ function PostJob_Internship() {
   const [stipendAmount, setStipendAmount] = useState('');
   const [stipendType, setStipendType] = useState('');
   const [skillsRequired, setSkillsRequired] = useState('');
-  const [internshipDuration, setInternshipDuration] = useState('');
+  const [internshipDuration, setInternshipDuration] = useState('1');
   const [internshipType, setInternshipType] = useState('');
   const [location, setLocation] = useState('');
   const [eligibilityCriteria, setEligibilityCriteria] = useState('');
@@ -98,12 +99,49 @@ function PostJob_Internship() {
         }
     };
   const handleFileUpload = (e) => {
-      setFile(e.target.files[0]); // Capture the file
+    const selectedFile = e.target.files[0]; 
+    if (selectedFile) {
+      if (selectedFile.type !== "application/pdf") {
+        toast.error("Invalid file type. Please upload a PDF.", {
+          position: "top-center", // Force center for laptop
+        });
+        e.target.value = ""; 
+        setFile(null);       
+        return;
+      }
+      setFile(selectedFile);
+    }
   };
 
+    const handleDurationChange = (e) => {
+      const val = e.target.value;
+
+      // 1. Allow empty string so user can backspace to type a new number
+      if (val === "") {
+          setInternshipDuration("");
+          return;
+      }
+
+      const num = Number(val);
+
+      // 2. ONLY update state if the number is between 1 and 12
+      if (num >= 1 && num <= 12) {
+          setInternshipDuration(val);
+      } 
+      // 3. AUTO-CORRECT: If they type 13 or 99, snap it back to 12
+      else if (num > 12) {
+          setInternshipDuration("12");
+          toast.warn("Duration cannot exceed 12 months", { position: "top-center" });
+      }
+      // 4. PREVENT NEGATIVES: If they type -5, snap it to 1
+      else if (num < 1) {
+          setInternshipDuration("1");
+      }
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!internshipRole || !jobDescription || !stipendType || !internshipType) {
+        console.log("Missing fields:", { internshipRole, jobDescription, stipendType, internshipType });
         return alert("Please fill in the required fields");
     }
     const formData = new FormData();
@@ -165,6 +203,19 @@ const resetForm = () => {
   setEligibilityCriteria([]);
   setJobDescription("");
 };
+
+const handleStipendChange = (type) => {
+  setStipendType(type);
+  
+  if (type === "Unpaid") {
+    setStipendAmount("0"); // Auto-fill 0 for Unpaid
+  } else {
+    // If switching back from Unpaid, clear the 0 so they can type a new number
+    if (stipendAmount === "0") {
+      setStipendAmount("");
+    }
+  }
+};
   
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -194,12 +245,12 @@ const resetForm = () => {
                   <img src={NotificationsIcon} alt="Notifications" className="w-8 h-8" />
                 </Link> */}
                 <Link to="/recruiters/notifications">
-                                      <FaBell className="text-2xl w-8 h-8  cursor-pointer hover:text-gray-300" />
-                                    </Link>
+                  <FaBell className="text-2xl w-8 h-8  cursor-pointer hover:text-gray-300" />
+                  </Link>
 
                 <Link to="/recruiters/jobs/active">
-                                      <FaHome className="text-2xl w-8 h-8  cursor-pointer hover:text-gray-300" />
-                                    </Link>
+                  <FaHome className="text-2xl w-8 h-8  cursor-pointer hover:text-gray-300" />
+                  </Link>
                 <Link to="/recruiters/getProfile" className="flex items-center gap-2">
                   <div className="rounded-full bg-gray-300 w-6 h-6 sm:w-8 sm:h-8">
                     <img src={ProfileImage} alt="" className="w-full h-full rounded-full" />
@@ -299,7 +350,6 @@ const resetForm = () => {
               initial="hidden"
               animate="visible"
             >
-              {/* Form Fields (reuse your existing motion.divs) */}
               {/* Example for Internship Role */}
               
               <motion.div variants={formFieldVariants}>
@@ -315,74 +365,51 @@ const resetForm = () => {
             />
           </motion.div>
 
-          {/* Stipend */}
-          <motion.div variants={formFieldVariants}>
+          {/* --- STIPEND SECTION --- */}
+          <motion.div variants={formFieldVariants} className="space-y-2">
             <label className="block text-gray-700 font-bold">Stipend</label>
-            <motion.div 
-              className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: { 
-                  opacity: 1,
-                  transition: { staggerChildren: 0.05, delayChildren: 0.1 }
-                }
-              }}
-            >
-              <motion.label 
-                className="flex items-center"
-                variants={{ hidden: { opacity: 0, x: -5 }, visible: { opacity: 1, x: 0 } }}
-                whileHover={{ scale: 1.05 }}
-              >
-                <input
-                  type="radio"
-                  name="stipendType"
-                  value="Fixed"
-                  onChange={() => setStipendType('Fixed')}
-                  className="mr-2"
-                />{' '}
-                Fixed
-              </motion.label>
-              <motion.label 
-                className="flex items-center"
-                variants={{ hidden: { opacity: 0, x: -5 }, visible: { opacity: 1, x: 0 } }}
-                whileHover={{ scale: 1.05 }}
-              >
-                <input
-                  type="radio"
-                  name="stipendType"
-                  value="Performance Based"
-                  onChange={() => setStipendType('Performance Based')}
-                  className="mr-2"
-                />{' '}
-                Performance Based
-              </motion.label>
-              <motion.label 
-                className="flex items-center"
-                variants={{ hidden: { opacity: 0, x: -5 }, visible: { opacity: 1, x: 0 } }}
-                whileHover={{ scale: 1.05 }}
-              >
-                <input
-                  type="radio"
-                  name="stipendType"
-                  value="Unpaid"
-                  onChange={() => setStipendType('Unpaid')}
-                  className="mr-2"
-                />{' '}
-                Unpaid
-              </motion.label>
-            </motion.div>
-            <motion.div 
-              className="mt-2"
-              variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
-            >
-              <motion.input
+            
+            {/* Radio Buttons */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mb-2">
+              {["Fixed", "Performance Based", "Unpaid"].map((type) => (
+                <label key={type} className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="stipendType" // Strictly grouped by this name
+                    value={type}
+                    checked={stipendType === type}
+                    onChange={() => handleStipendChange(type)} // Uses the stable helper function
+                    className="mr-2 accent-[#5F9D08]"
+                  />
+                  <span className="text-gray-700">{type}</span>
+                </label>
+              ))}
+            </div>
+
+            {/* Amount Input */}
+            <motion.div variants={formFieldVariants}>
+              <input
                 type="number"
+                min="0"
+                step="1"
                 value={stipendAmount}
-                onChange={(e) => setStipendAmount(e.target.value)}
-                placeholder="Enter Amount"
-                className="w-full p-2 border border-gray-300 rounded"
-                required
-                whileFocus={{ borderColor: '#5F9D08', boxShadow: '0 0 0 2px rgba(95, 157, 8, 0.2)' }}
+                disabled={stipendType === "Unpaid"}
+                placeholder={stipendType === "Unpaid" ? "No stipend for unpaid" : "Enter Amount (per month)"}
+                // FIX 1: Stop Mouse Wheel from changing numbers
+                onWheel={(e) => e.target.blur()}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  // FIX 2: Strict manual control
+                  if (val === "" || Number(val) >= 0) {
+                    setStipendAmount(val);
+                  }
+                }}
+                className={`w-full p-2 border rounded outline-none transition-all ${
+                  stipendType === "Unpaid" 
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200" 
+                  : "border-gray-300 focus:ring-2 focus:ring-[#5F9D08]"
+                }`}
+                required={stipendType !== "Unpaid"}
               />
             </motion.div>
           </motion.div>
@@ -444,28 +471,22 @@ const resetForm = () => {
             </motion.div>
           </motion.div>
 
-          {/* Internship Duration */}
-          <motion.div className="flex items-center space-x-4" variants={formFieldVariants}>
-            <motion.div className="flex-1">
-              <label className="block text-gray-700 font-bold">Internship Duration</label>
-              <motion.input
-                type="text"
-                value={internshipDuration}
-                onChange={(e) => setInternshipDuration(e.target.value)}
-                placeholder="e.g., 3"
-                className="w-full p-2 border border-gray-300 rounded"
-                required
-                whileFocus={{ borderColor: '#5F9D08', boxShadow: '0 0 0 2px rgba(95, 157, 8, 0.2)' }}
-              />
-              <motion.span 
-                className="text-gray-500"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                months
-              </motion.span>
-            </motion.div>
+          <motion.div variants={formFieldVariants}>
+              <label className="block text-gray-700 font-bold">Internship Duration (Months)</label>
+              
+              <div className="flex items-center border border-gray-300 rounded p-2 focus-within:ring-2 focus-within:ring-[#5F9D08] bg-white">
+                  <input
+                      type="number"      // Enables Spin Buttons (▴ and ▾)
+                      min="1"            // ▾ arrow stops at 1
+                      max="12"           // ▴ arrow stops at 12
+                      step="1"           // Arrows move in whole numbers
+                      value={internshipDuration}
+                      onChange={handleDurationChange} // Uses our Step 2 logic
+                      placeholder="1-12"
+                      className="outline-none w-full bg-transparent text-gray-800"
+                      required
+                  />
+              </div>
           </motion.div>
 
           {/* Location */}
@@ -481,19 +502,6 @@ const resetForm = () => {
             />
           </motion.div>
 
-          {/* Attach Document */}
-          <motion.div variants={formFieldVariants}>
-            <label className="block text-gray-700 font-bold">Attach Document</label>
-            <motion.input
-              ref={fileInputRef}
-              type="file"
-              onChange={handleFileUpload}
-              className="w-full p-2 border border-gray-300 rounded"
-              multiple
-              whileHover={{ backgroundColor: '#f9fafb' }}
-            />
-          </motion.div>
-
           {/* Eligibility Criteria */}
           <motion.div variants={formFieldVariants}>
             <label className="block text-gray-700 font-bold">Eligibility Criteria</label>
@@ -505,6 +513,31 @@ const resetForm = () => {
               whileFocus={{ borderColor: '#5F9D08', boxShadow: '0 0 0 2px rgba(95, 157, 8, 0.2)' }}
             />
           </motion.div>
+
+          {/* Attach Document */}
+          <motion.div variants={formFieldVariants}>
+             <label className="block text-gray-700 font-bold">Internship Description Document (PDF)</label>
+             <input
+              ref={fileInputRef} // Replace 'key' with 'ref'
+              type="file"
+              onChange={handleFileUpload}
+              className="w-full p-2 border border-gray-300 rounded bg-white mt-1"
+              accept="application/pdf"
+              />
+              {/* NEW: Remove file button */}
+              {file && (
+              <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border border-green-200">
+              <span className="text-xs text-gray-600 truncate mr-2">Selected: {file.name}</span>
+              <button 
+              type="button" 
+              onClick={handleRemoveFile} 
+              className="text-xs text-red-500 hover:underline font-medium"
+              >
+              Remove
+              </button>
+            </div> )}
+          </motion.div>
+
           <motion.div variants={formFieldVariants}>
           <label className="block text-gray-700 font-bold">Internship Description</label>
           <motion.textarea
@@ -515,22 +548,7 @@ const resetForm = () => {
             required
             whileFocus={{ borderColor: '#5F9D08', boxShadow: '0 0 0 2px rgba(95, 157, 8, 0.2)' }}
           />  
-            {/* NEW: Remove file button */}
-                {file && (
-                  <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded border border-green-200">
-                    <span className="text-xs text-gray-600 truncate mr-2">Selected: {file.name}</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setFile(null)} 
-                      className="text-xs text-red-500 hover:underline font-medium"
-                    >
-                      Remove
-                    </button>
-                  </div> 
-                )}
-        </motion.div>
-
-              {/* ...other fields (stipend, skills, type, duration, etc.) — already good */}
+          </motion.div>
 
               {/* Submit Button */}
               <motion.div
@@ -553,6 +571,18 @@ const resetForm = () => {
           </motion.div>
         </div>
       </div>
+      <ToastContainer 
+              position="top-center" 
+              autoClose={3000} 
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="colored"
+            />
     </div>
   );
 }

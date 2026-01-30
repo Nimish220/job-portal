@@ -21,7 +21,7 @@ function EditInternship() {
     const [stipendAmount, setStipendAmount] = useState('');
     const [stipendType, setStipendType] = useState('');
     const [skillsRequired, setSkillsRequired] = useState('');
-    const [internshipDuration, setInternshipDuration] = useState('');
+    const [internshipDuration, setInternshipDuration] = useState('1');
     const [internshipType, setInternshipType] = useState('');
     const [location, setLocation] = useState('');
     const [eligibilityCriteria, setEligibilityCriteria] = useState('');
@@ -30,7 +30,7 @@ function EditInternship() {
     const [userName, setUserName] = useState('');
     const [screenWidth, setScreenWidth] = useState(window.innerWidth);
     const [file, setFile] = useState(null);
-
+    
     const isMobile = screenWidth < 768;
 
     const handleRemoveFile = () => {
@@ -38,7 +38,19 @@ function EditInternship() {
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    const handleFileUpload = (e) => { setFile(e.target.files[0]); };
+    const handleFileUpload = (e) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            if (selectedFile.type !== "application/pdf") {
+                toast.error("Invalid file type. Please upload a PDF.");
+                e.target.value = ""; // Clear input
+                setFile(null);
+                return;
+            }
+            setFile(selectedFile);
+        }
+    };
+
 
     // 1. Fetch Existing Data on Load
     useEffect(() => {
@@ -79,7 +91,6 @@ function EditInternship() {
                 }
             }
         };
-
         const fetchProfile = async () => {
             try {
                 const res = await axios.get(`${backend_url}/api/recruiters/getProfile`, { withCredentials: true });
@@ -98,10 +109,39 @@ function EditInternship() {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    const handleDurationChange = (e) => {
+            const val = e.target.value;
+
+            // 1. Allow empty string so user can backspace to type a new number
+            if (val === "") {
+                setInternshipDuration("");
+                return;
+            }
+
+            const num = Number(val);
+
+            // 2. ONLY update state if the number is between 1 and 12
+            if (num >= 1 && num <= 12) {
+                setInternshipDuration(val);
+            } 
+            // 3. AUTO-CORRECT: If they type 13 or 99, snap it back to 12
+            else if (num > 12) {
+                setInternshipDuration("12");
+                toast.warn("Duration cannot exceed 12 months", { position: "top-center" });
+            }
+            // 4. PREVENT NEGATIVES: If they type -5, snap it to 1
+            else if (num < 1) {
+                setInternshipDuration("1");
+            }
+    };
 
     // 2. Updated Handle Submit (PUT request)
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!internshipRole || !jobDescription || !stipendType || !internshipType) {
+            console.log("Missing fields:", { internshipRole, jobDescription, stipendType, internshipType });
+            return alert("Please fill in the required fields");
+        }
         const loadingToast = toast.loading("Updating internship...");
 
         const formData = new FormData();
@@ -144,6 +184,14 @@ function EditInternship() {
     const formFieldVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } } };
     const staggerContainer = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } } };
 
+        const handleStipendChange = (type) => {
+    setStipendType(type);
+    if (type === "Unpaid") {
+        setStipendAmount("0");
+    } else if (stipendAmount === "0") {
+        setStipendAmount(""); // Clear the 0 if switching back to paid
+    }
+    };
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
             {/* Navbar */}
@@ -183,15 +231,47 @@ function EditInternship() {
 
                             <motion.div variants={formFieldVariants}>
                                 <label className="block text-gray-700 font-bold">Stipend</label>
-                                <div className="flex flex-wrap gap-4">
+                                <div className="flex flex-wrap gap-4 mb-3">
                                     {["Fixed", "Performance Based", "Unpaid"].map((type) => (
-                                        <label key={type} className="flex items-center">
-                                            <input type="radio" name="stipendType" value={type} checked={stipendType === type} onChange={() => setStipendType(type)} className="mr-2" /> {type}
-                                        </label>
+                                    <label key={type} className="flex items-center cursor-pointer">
+                                        <input
+                                        type="radio"
+                                        name="stipendType"
+                                        value={type}
+                                        checked={stipendType === type}
+                                        onChange={() => handleStipendChange(type)} // Use helper for stability
+                                        className="mr-2 accent-[#5F9D08]"
+                                        />
+                                        <span className="text-gray-700">{type}</span>
+                                    </label>
                                     ))}
                                 </div>
-                                <input type="number" value={stipendAmount} onChange={(e) => setStipendAmount(e.target.value)} placeholder="Amount" className="w-full p-2 mt-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" required={stipendType !== "Unpaid"} />
-                            </motion.div>
+
+                                {/* Controlled and Conditional Input */}
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={stipendAmount}
+                                    disabled={stipendType === "Unpaid"}
+                                    placeholder={stipendType === "Unpaid" ? "No stipend for unpaid" : "Amount"}
+                                    // FIX 1: Stop Mouse Wheel from changing numbers
+                                    onWheel={(e) => e.target.blur()}
+                                    onChange={(e) => {
+                                    const val = e.target.value;
+                                    // Strict numeric control to prevent state "jumps"
+                                    if (val === "" || (Number(val) >= 0 && !val.startsWith('-'))) {
+                                        setStipendAmount(val);
+                                    }
+                                    }}
+                                    className={`w-full p-2 mt-2 border rounded outline-none transition-all ${
+                                    stipendType === "Unpaid"
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"
+                                        : "border-gray-300 focus:ring-2 focus:ring-[#5F9D08]"
+                                    }`}
+                                    required={stipendType !== "Unpaid"}
+                                />
+                                </motion.div>
 
                             <motion.div variants={formFieldVariants}>
                                 <label className="block text-gray-700 font-bold">Skills Required</label>
@@ -210,8 +290,21 @@ function EditInternship() {
                             </motion.div>
 
                             <motion.div variants={formFieldVariants}>
-                                <label className="block text-gray-700 font-bold">Duration (Months)</label>
-                                <input type="number" value={internshipDuration} onChange={(e) => setInternshipDuration(e.target.value)} className="w-full p-2 border border-gray-300 rounded" required />
+                                <label className="block text-gray-700 font-bold">Internship Duration (Months)</label>
+                                
+                                <div className="flex items-center border border-gray-300 rounded p-2 focus-within:ring-2 focus-within:ring-[#5F9D08] bg-white">
+                                    <input
+                                        type="number"      // Enables Spin Buttons (▴ and ▾)
+                                        min="1"            // ▾ arrow stops at 1
+                                        max="12"           // ▴ arrow stops at 12
+                                        step="1"           // Arrows move in whole numbers
+                                        value={internshipDuration}
+                                        onChange={handleDurationChange} // Uses our Step 2 logic
+                                        placeholder="1-12"
+                                        className="outline-none w-full bg-transparent text-gray-800"
+                                        required
+                                    />
+                                </div>
                             </motion.div>
 
                             <motion.div variants={formFieldVariants}>
@@ -224,10 +317,11 @@ function EditInternship() {
                                 <textarea value={eligibilityCriteria} onChange={(e) => setEligibilityCriteria(e.target.value)} className="w-full p-2 border border-gray-300 rounded h-24" />
                             </motion.div>
                                 <motion.div variants={formFieldVariants}>
-                                    <label className="block text-gray-700 font-bold">Internship Description Document (PDF/Image)</label>
-                                    {!file && internshipDescriptionDocument && (
+                                    <label className="block text-gray-700 font-bold">Internship Description Document (PDF)</label>
+                                    {/* Inside EditInternship.jsx JSX block */}
+                                    {!file && internshipDescriptionDocument && ( // Ensure this matches your state name
                                         <div className="mb-2 p-2 bg-blue-50 rounded border border-blue-200 flex items-center justify-between">
-                                            <span className="text-xs text-blue-700 font-medium">Current Document attached</span>
+                                            <span className="text-xs text-blue-700 font-medium">Current PDF attached</span>
                                             <a href={internshipDescriptionDocument} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline">View</a>
                                         </div>
                                     )}
@@ -236,7 +330,7 @@ function EditInternship() {
                                         type="file" 
                                         onChange={handleFileUpload} 
                                         className="w-full p-2 border border-gray-300 rounded bg-white mt-1 text-sm" 
-                                        accept=".pdf,.docx,image/*" 
+                                        accept="application/pdf"
                                     />
                                     {file && (
                                         <div className="flex justify-between mt-1 text-xs text-blue-600 font-medium">
@@ -269,7 +363,7 @@ function EditInternship() {
                     </motion.div>
                 </div>
             </div>
-            <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+            <ToastContainer position="top-center" autoClose={3000} theme="colored" />
         </div>
     );
 }

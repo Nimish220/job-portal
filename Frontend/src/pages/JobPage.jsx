@@ -170,7 +170,6 @@ const JobPage = () => {
     const docUrl = isInternship 
     ? job.internshipDescriptionDocument 
     : job.jobDescriptionDocument;
-
     return (
         <div className="flex min-h-screen pt-10 bg-gray-50">
             <NavSearchBar

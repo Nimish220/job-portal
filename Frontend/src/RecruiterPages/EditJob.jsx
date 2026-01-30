@@ -49,8 +49,17 @@ function EditJob() {
     }, []);
 
     const handleFileUpload = (e) => {
-        setFile(e.target.files[0]);
-    };
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+        if (selectedFile.type !== "application/pdf") {
+            toast.error("Invalid file type. Please upload a PDF.");
+            e.target.value = ""; // Clear input
+            setFile(null);
+            return;
+        }
+        setFile(selectedFile);
+    }
+};
 
     const handleRemoveFile = () => {
         setFile(null);
@@ -86,6 +95,13 @@ function EditJob() {
     // --- SUBMIT LOGIC ---
     const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!jobRole || !jobDescription || !selectedJobType) {
+        return toast.error("Please fill in the Job Role and Description", { position: "top-center" });
+    }
+    if (!ctc || Number(ctc) <= 0) {
+        return toast.error("Job CTC must be greater than 0 LPA", { position: "top-center" });
+    }
     const loadingToast = toast.loading("Updating details and document...");
 
     // Create the container for binary data
@@ -93,8 +109,8 @@ function EditJob() {
     
     // Append all text fields
     formData.append("jobRole", jobRole);
-    formData.append("experience", experience);
-    formData.append("ctc", ctc);
+    formData.append("experience", String(experience || 0));
+    formData.append("ctc", String(ctc || "0"));
     formData.append("skillsRequired", skillsRequired);
     formData.append("jobDescription", jobDescription);
     formData.append("location", location);
@@ -150,17 +166,48 @@ function EditJob() {
                                 <input type="text" value={jobRole} onChange={(e) => setJobRole(e.target.value)} className="w-full p-2 border rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" required />
                             </motion.div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <motion.div variants={formFieldVariants}>
-                                    <label className="block text-gray-700 font-bold">Experience (Years)</label>
-                                    <input type="number" value={experience} onChange={(e) => setExperience(e.target.value)} className="w-full p-2 border rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" />
-                                </motion.div>
-                                <motion.div variants={formFieldVariants}>
-                                    <label className="block text-gray-700 font-bold">CTC (in LPA)</label>
-                                    <input type="number" value={ctc} onChange={(e) => setCtc(e.target.value)} className="w-full p-2 border rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" />
-                                </motion.div>
-                            </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {/* Experience Field */}
+    <motion.div variants={formFieldVariants}>
+        <label className="block text-gray-700 font-bold mb-1">Experience (Years)</label>
+        <input 
+            type="number" 
+            min="0" 
+            step="1"
+            value={experience} 
+            onWheel={(e) => e.target.blur()} // FIX: Stop scroll jumping
+            onChange={(e) => {
+                const val = e.target.value;
+                // FIX: Block minus sign and negative zero
+                if (val === "" || (Number(val) >= 0 && !val.includes('-'))) {
+                    setExperience(val);
+                }
+            }} 
+            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none transition-all" 
+        />
+    </motion.div>
 
+    {/* CTC Field */}
+    <motion.div variants={formFieldVariants}>
+        <label className="block text-gray-700 font-bold mb-1">CTC (in LPA)</label>
+        <input 
+            type="number" 
+            min="0.1" 
+            step="0.01" 
+            value={ctc} 
+            onWheel={(e) => e.target.blur()} // FIX: Stop scroll jumping
+            onChange={(e) => {
+                const val = e.target.value;
+                // FIX: Strict positive numeric control
+                if (val === "" || (Number(val) >= 0 && !val.includes('-'))) {
+                    setCtc(val);
+                }
+            }} 
+            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none transition-all" 
+            required
+        />
+    </motion.div>
+</div>
                             <motion.div variants={formFieldVariants}>
                                 <label className="block text-gray-700 font-bold">Skills Required</label>
                                 <input type="text" value={skillsRequired} onChange={(e) => setSkillsRequired(e.target.value)} placeholder="e.g., JavaScript, Node.js" className="w-full p-2 border rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" />
@@ -184,7 +231,7 @@ function EditJob() {
                                             <a href={jobDescriptionDocument} target="_blank" className="text-xs text-blue-600 underline">View</a>
                                         </div>
                                     )}
-                                <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="w-full p-2 border border-gray-300 rounded bg-white mt-1" accept=".pdf,.docx,image/*" />
+                                <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="w-full p-2 border border-gray-300 rounded bg-white mt-1" accept="application/pdf"/>
                                 {file && (
                                     <div className="flex justify-between mt-1 text-xs text-blue-600 font-medium">
                                         <span>Selected: {file.name}</span>
@@ -245,7 +292,7 @@ function EditJob() {
                     </motion.div>
                 </div>
             </div>
-            <ToastContainer position="top-right" autoClose={3000} />
+            <ToastContainer position="top-center" autoClose={3000} />
         </div>
     );
 }

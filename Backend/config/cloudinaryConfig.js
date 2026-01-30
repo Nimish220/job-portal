@@ -12,7 +12,11 @@ cloudinary.config({
 export const uploadToCloudinary = (fileBuffer, folderName = "general") => {
     return new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: folderName, resource_type: "auto" },
+            { 
+                folder: folderName, 
+                resource_type: "auto", 
+                format: "pdf" // Explicitly force PDF
+            },
             (error, result) => {
                 if (result) resolve(result.secure_url);
                 else reject(error);
