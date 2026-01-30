@@ -1,13 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import NavSearchBar from '../components/Header/NavSearchBar';
+import Sidebar from '../components/SideBar';
 
 const ApplyJob = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const loc = useLocation();
 
-  // Determine if this application is for an Internship
+  // Layout & UI State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const isMobile = screenWidth < 768;
+  
+  // Simplified Popup State
+  const [popup, setPopup] = useState({ show: false, type: '', message: '' });
+  const [loading, setLoading] = useState(false);
+
   const isInternship = loc.pathname.includes('/internship/apply');
+  const backend_url = import.meta.env.VITE_BACKEND_URL;
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -20,60 +32,68 @@ const ApplyJob = () => {
     resume: null,
   });
 
-  const [loading, setLoading] = useState(false);
-  const backend_url = import.meta.env.VITE_BACKEND_URL;
+  useEffect(() => {
+    const handleResize = () => setScreenWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
-  // Handle input changes
+  // Simplified trigger for the top-bar popup
+  const triggerPopup = (type, message) => {
+  setPopup({ show: true, type, message });
+  setTimeout(() => {
+    setPopup({ show: false, type: '', message: '' });
+    if (type === 'success') navigate("/users/dashboard");
+  }, 2000);
+};
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle file input change with 2MB validation
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     const maxSize = 2 * 1024 * 1024; // 2MB
 
     if (file) {
-      if (file.size > maxSize) {
-        alert("File size exceeds 2MB! Please upload a smaller file.");
-        e.target.value = ""; // Reset the input field
+      if (file.type !== "application/pdf") {
+        triggerPopup('error', "Only PDF resume is allowed");
+        e.target.value = "";
         setFormData((prev) => ({ ...prev, resume: null }));
         return;
       }
+
+      if (file.size > maxSize) {
+        triggerPopup('error', "PDF size exceeds 2MB!");
+        e.target.value = "";
+        setFormData((prev) => ({ ...prev, resume: null }));
+        return;
+      }
+
       setFormData((prev) => ({ ...prev, resume: file }));
     }
   };
 
-  // Submit application
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.resume) {
-      alert("Please upload your resume.");
+      triggerPopup('error', "Please upload your resume.");
       return;
     }
 
     setLoading(true);
-
-    // Dynamic Endpoint and Key based on page type
-    const endpoint = isInternship
-      ? `${backend_url}/api/users/applyInternship`
+    const endpoint = isInternship 
+      ? `${backend_url}/api/users/applyInternship` 
       : `${backend_url}/api/users/applyJob`;
-
     const idKey = isInternship ? "internshipId" : "jobId";
 
     try {
       const form = new FormData();
       form.append(idKey, id);
-      form.append("fullName", formData.fullName);
-      form.append("email", formData.email);
-      form.append("phone", formData.phone);
-      form.append("experience", formData.experience);
-      form.append("currentCompany", formData.currentCompany);
-      form.append("noticePeriod", formData.noticePeriod);
-      form.append("coverLetter", formData.coverLetter);
-      form.append("resume", formData.resume);
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== null) form.append(key, formData[key]);
+      });
 
       const res = await fetch(endpoint, {
         method: "PUT",
@@ -81,154 +101,111 @@ const ApplyJob = () => {
         body: form,
       });
 
-      const data = await res.json();
-
       if (res.ok) {
-        alert(`Application for ${isInternship ? 'Internship' : 'Job'} submitted successfully!`);
-        navigate("/users/dashboard");
+        triggerPopup('success', "Updated successfully!");
       } else {
-        alert(`Application Error: ${data.message || "Failed to submit"}`);
+        const data = await res.json();
+        triggerPopup('error', data.message || "Failed to submit");
       }
     } catch (err) {
-      console.error("Network/System Error:", err);
-      alert("Something went wrong. Please check your connection and try again.");
+      triggerPopup('error', "Network error. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-100 overflow-y-auto">
-      <div className="max-w-3xl mx-auto px-4 py-10">
-        <div className="bg-white rounded shadow-lg p-6">
-          <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
-            Apply for {isInternship ? 'Internship' : 'Job'}
-          </h2>
+    <div className="bg-gray-50 min-h-screen flex flex-col md:flex-row font-sans relative">
+      {/* Simple Top Popup Notification */}
+      {/* Simple Top Popup Notification */}
+<AnimatePresence>
+  {popup.show && (
+    <motion.div
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 20 }}
+      exit={{ opacity: 0, y: -50 }}
+      className="fixed top-0 left-0 right-0 z-[100] flex justify-center pointer-events-none"
+    >
+      <div className="bg-white shadow-xl rounded-lg px-6 py-3 border border-gray-100 flex items-center gap-3 pointer-events-auto">
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${popup.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
+          <i className={`fas ${popup.type === 'success' ? 'fa-check' : 'fa-times'} text-white text-xs`}></i>
+        </div>
+        <span className="text-gray-700 font-medium">{popup.message}</span>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
-          <form onSubmit={handleSubmit} encType="multipart/form-data">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                name="fullName"
-                required
-                placeholder="Full Name *"
-                value={formData.fullName}
-                onChange={handleChange}
-                className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-              <input
-                name="email"
-                required
-                type="email"
-                placeholder="Email *"
-                value={formData.email}
-                onChange={handleChange}
-                className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-              <input
-                name="phone"
-                required
-                placeholder="Phone *"
-                value={formData.phone}
-                onChange={handleChange}
-                className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-              <select
-                name="experience"
-                required
-                value={formData.experience}
-                onChange={handleChange}
-                className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Select experience</option>
-                <option value="0-1">0-1 years</option>
-                <option value="1-3">1-3 years</option>
-                <option value="3-5">3-5 years</option>
-                <option value="5+">5+ years</option>
-              </select>
-              <input
-                name="currentCompany"
-                placeholder="Current Company"
-                value={formData.currentCompany}
-                onChange={handleChange}
-                className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-              <select
-                name="noticePeriod"
-                value={formData.noticePeriod}
-                onChange={handleChange}
-                className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="Immediate">Immediate</option>
-                <option value="15 Days">15 Days</option>
-                <option value="1 Month">1 Month</option>
-                <option value="2 Months">2 Months</option>
-              </select>
-            </div>
+      <NavSearchBar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} showHamburger={true} />
+      
+      {!isMobile && (
+        <div className="hidden lg:block fixed top-20 left-0 z-30">
+          <Sidebar isOpen={true} isMobile={false} />
+        </div>
+      )}
 
-            {/* Resume Upload Section */}
-            <div className="mt-4">
-              <label className="block text-sm font-medium mb-1 flex items-center gap-2 text-gray-700">
-                <i className="fas fa-file-pdf text-red-500"></i>
-                <i className="fas fa-file-word text-blue-500"></i>
-                <i className="fas fa-file-image text-purple-500"></i>
-                Resume/CV (File or Image) *
-              </label>
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isMobile={true} />
+        )}
+      </AnimatePresence>
 
-              <div className="group relative border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-green-500 transition-colors bg-gray-50">
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,image/jpeg,image/png,image/jpg"
-                  onChange={handleFileChange}
-                  required
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <div className="text-center">
-                  <i className="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2 group-hover:text-green-500 transition-colors"></i>
+      <div className="flex-1 pt-24 lg:pl-64 px-4 md:px-8 pb-10">
+        <motion.div 
+          className="max-w-3xl mx-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 border border-gray-100">
+            <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 border-b pb-4">
+              Apply for {isInternship ? 'Internship' : 'Job'}
+            </h2>
+
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input name="fullName" required placeholder="Full Name *" value={formData.fullName} onChange={handleChange} className="border p-2.5 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" />
+                <input name="email" required type="email" placeholder="Email *" value={formData.email} onChange={handleChange} className="border p-2.5 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" />
+                <input name="phone" required placeholder="Phone *" value={formData.phone} onChange={handleChange} className="border p-2.5 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" />
+                <select name="experience" required value={formData.experience} onChange={handleChange} className="border p-2.5 rounded focus:ring-2 focus:ring-[#5F9D08] bg-white outline-none">
+                  <option value="">Select experience</option>
+                  <option value="0-1">0-1 years</option>
+                  <option value="1-3">1-3 years</option>
+                  <option value="3-5">3-5 years</option>
+                  <option value="5+">5+ years</option>
+                </select>
+                <input name="currentCompany" placeholder="Current Company" value={formData.currentCompany} onChange={handleChange} className="border p-2.5 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" />
+                <select name="noticePeriod" value={formData.noticePeriod} onChange={handleChange} className="border p-2.5 rounded focus:ring-2 focus:ring-[#5F9D08] bg-white outline-none">
+                  <option value="Immediate">Immediate</option>
+                  <option value="15 Days">15 Days</option>
+                  <option value="1 Month">1 Month</option>
+                  <option value="2 Months">2 Months</option>
+                </select>
+              </div>
+
+              <div className="mt-6">
+                <label className="block text-sm font-medium mb-1 text-gray-700">Resume/CV (PDF Only) *</label>
+                <div className="group relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-[#5F9D08] transition-colors bg-gray-50 text-center">
+                  <input type="file" accept="application/pdf" onChange={handleFileChange} required className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                  <i className="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2 group-hover:text-[#5F9D08] transition-colors"></i>
                   <p className="text-sm text-gray-600">
-                    {formData.resume ? (
-                      <span className="text-green-600 font-semibold">
-                        Selected: {formData.resume.name}
-                      </span>
-                    ) : (
-                      "Click to upload or drag and drop"
-                    )}
+                    {formData.resume ? <span className="text-[#5F9D08] font-semibold">Selected: {formData.resume.name}</span> : "Upload PDF Resume"}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1 uppercase">PDF, DOC, DOCX, IMG (Max 2MB)</p>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-4">
-              <textarea
-                name="coverLetter"
-                rows="4"
-                placeholder="Cover Letter (Optional)"
-                value={formData.coverLetter}
-                onChange={handleChange}
-                className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
+              <div className="mt-6">
+                <textarea name="coverLetter" rows="4" placeholder="Cover Letter (Optional)" value={formData.coverLetter} onChange={handleChange} className="w-full border p-3 rounded focus:ring-2 focus:ring-[#5F9D08] resize-none outline-none" />
+              </div>
 
-            <div className="mt-6 flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => navigate("/users/dashboard")}
-                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 font-medium text-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className={`px-4 py-2 rounded text-white font-bold transition-all shadow-md ${
-                  loading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700 active:scale-95"
-                }`}
-              >
-                {loading ? "Submitting..." : "Submit Application"}
-              </button>
-            </div>
-          </form>
-        </div>
+              <div className="mt-8 flex justify-end space-x-4">
+                <button type="button" onClick={() => navigate(-1)} className="px-6 py-2 rounded bg-gray-100 hover:bg-gray-200 font-medium text-gray-700">Cancel</button>
+                <button type="submit" disabled={loading} className={`px-8 py-2 rounded text-white font-bold transition-all shadow-md ${loading ? "bg-gray-400" : "bg-[#5F9D08] hover:opacity-90 active:scale-95"}`}>
+                  {loading ? "Submitting..." : "Submit Application"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </motion.div>
       </div>
     </div>
   );
