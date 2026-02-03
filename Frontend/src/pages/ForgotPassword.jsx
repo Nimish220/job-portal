@@ -10,6 +10,7 @@ const ForgotPassword = () => {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const navigate = useNavigate();
     
+    const backend_url = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         if (loading) return;
@@ -21,7 +22,7 @@ const ForgotPassword = () => {
         setLoading(true);
 
         try {
-            const { data } = await axios.post('http://localhost:8000/api/users/forgot-password', { email });
+            const { data } = await axios.post(`${backend_url}/api/users/forgot-password`, { email });
             
             if (data.success) {
                 // Success popup stays on THIS page
