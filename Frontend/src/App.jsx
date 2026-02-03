@@ -43,13 +43,17 @@ import Support from './pages/Support.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import RecruiterForgotPassword from './RecruiterPages/Login_SignUp/RecruiterForgotPassword.jsx';
+import RecruiterResetPassword from './RecruiterPages/Login_SignUp/RecruiterResetPassword.jsx';
 function App() {
   
 
   return (
     
     <Router>
-      <ToastContainer position="top-right" autoClose={3000} theme="light" />
+      <ToastContainer position="top-center" autoClose={4000} theme="light" />
       <Routes> 
         {/* Public Routes */}
         <Route path='/' element={<LandingPage />} />
@@ -63,6 +67,11 @@ function App() {
         <Route path="/support" element={<Support />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+        {/* Route for the email request form */}
+      <Route path="/users/forgot-password" element={<ForgotPassword />} />
+      
+      {/* Route for the link user clicks in their Gmail */}
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
         {/* <Route path="/users/job/:id" element={<JobDetails />} /> */}
 
         {/* User Routes */}
@@ -97,6 +106,8 @@ function App() {
         <Route path='/recruiters/updateRecruiter' element={<ProtectedRoute allowedRole="recruiter"><UpdateRecruiter /></ProtectedRoute>} />
         <Route path='/recruiters/applicantsProfile/:jobId/:applicantId' element={<ProtectedRoute allowedRole="recruiter"><ApplicantsProfile /></ProtectedRoute>} />
         <Route path='/recruiters/post-job/job' element={<ProtectedRoute allowedRole="recruiter"><PostJob_Job /></ProtectedRoute>} />
+        <Route path="/recruiters/forgot-password" element={<RecruiterForgotPassword />} />
+        <Route path="/recruiters/reset-password/:token" element={<RecruiterResetPassword />} />
         {/*  Add this to App.js so the profile page knows it is an Internship applicant */}
       <Route 
         path='/recruiters/internshipApplicants/:jobId/:applicantId' 

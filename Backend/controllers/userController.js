@@ -4,18 +4,19 @@ import jwt from "jsonwebtoken";
 import { Job } from "../models/Job.js";
 import { Internship } from "../models/Internship.js";
 import { uploadToCloudinary } from "../config/cloudinaryConfig.js";
+import crypto from 'crypto'; //  this for the token generation
+import { sendEmail } from '../utils/sendEmail.js'; //  this for Brevo
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {
     const existingUser = await User.findOne({ email });
     if (!existingUser)
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ success: false,message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, existingUser.password);
     if (!isMatch)
-      return res.status(400).json({ message: "Invalid Credentials" });
-
+      return res.status(400).json({ success: false, message: "Invalid Credentials" });
     const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
@@ -505,5 +506,73 @@ export const applyToInternships = async (req, res) => {
             error: error.message, 
             message: "Server error during application" 
         });
+    }
+};
+
+export const forgotPassword = async (req, res) => {
+    let user; // Define user outside so the catch block can see it
+    //console.log("FORGOT PASSWORD HIT", req.body.email);
+    try {
+        const { email } = req.body;
+        user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const resetToken = crypto.randomBytes(20).toString('hex');
+        user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; 
+
+        await user.save({ validateBeforeSave: false });
+
+        const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+        const message = `Click here to reset your password: ${resetUrl}`;
+
+        await sendEmail({
+            email: user.email,
+            subject: 'Password Reset Request',
+            message,
+            resetUrl: resetUrl,
+        });
+
+        res.status(200).json({ success: true, message: `Email sent to ${email}` });
+    } catch (error) {
+        // Only try to clear fields if the user was actually found
+        if (user) {
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpire = undefined;
+            await user.save({ validateBeforeSave: false });
+        }
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const resetPassword = async (req, res) => {
+    try {
+        // Hash the token from the URL to compare it with the DB
+        const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+        const user = await User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpire: { $gt: Date.now() } // Check if token is still valid
+        });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Token is invalid or has expired." });
+        }
+
+        // Set new password (bcrypt hashing)
+        user.password = await bcrypt.hash(req.body.password, 10);
+        
+        // Clear reset fields
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+
+        await user.save();
+
+        res.status(200).json({ success: true, message: "Password reset successful! You can now log in." });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 };

@@ -12,6 +12,8 @@ import {
   removeSavedJob,
   getInternships,
   getInternshipById,
+  forgotPassword,
+  resetPassword
 } from "../controllers/userController.js";
 import { isSeeker, protect } from "../middlewares/authMiddleware.js";
 import upload from "../middlewares/multer.js";
@@ -35,5 +37,6 @@ router.get("/getInternships", protect, isSeeker, getInternships);
 router.get("/internship/:id", protect, isSeeker, getInternshipById);
 router.put("/applyInternship", protect, isSeeker, upload.single("resume"), applyToInternships);
 router.get('/me', protect,isSeeker, getCurrentUser);
-
+router.post("/forgot-password", forgotPassword); // Sends the email
+router.put("/reset-password/:token", resetPassword); // Updates the password in DB
 export default router;

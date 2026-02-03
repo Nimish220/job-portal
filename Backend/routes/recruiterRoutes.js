@@ -27,7 +27,9 @@ import {
   deleteInternship,
   notifyApplicant,
   getCandidateProfile,
-  changePassword
+  changePassword,
+  forgotPasswordRecruiter,
+  resetPasswordRecruiter
 } from '../controllers/recruiterController.js';
 
 const router = express.Router();
@@ -38,6 +40,8 @@ router.post('/login', loginRecruiter);
 router.post('/logout', protect, isRecruiter, recruiterLogout);
 // recruiterRoutes.js
 router.post('/change-password', protect, isRecruiter, changePassword);
+router.post("/forgot-password", forgotPasswordRecruiter);
+router.put("/reset-password/:token", resetPasswordRecruiter);
 
 // Recruiter profile
 router.get('/getProfile', protect, isRecruiter, getProfile);

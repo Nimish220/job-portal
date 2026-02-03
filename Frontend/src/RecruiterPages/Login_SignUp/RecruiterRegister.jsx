@@ -89,7 +89,7 @@ const handleSubmit = async (e) => {
   const combinedFormData = new FormData();
   for (const key in formData) {
     if (key === "panCardOrGstFile") {
-      combinedFormData.append("panCardOrGstFile", formData.panCardOrGstFile); // important
+      combinedFormData.append("companyPanCardOrGstFile", formData.panCardOrGstFile); // important
     } else {
       combinedFormData.append(key, formData[key]);
     }
@@ -238,12 +238,12 @@ console.log("isFile?", formData.panCardOrGstFile instanceof File);
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-gray-700 mb-1">Upload PAN Card or GST Document<span className="text-red-500">*</span></label>
+                  <label className="text-gray-700 mb-1">Upload PAN Card or GST Document(PDF only)<span className="text-red-500">*</span></label>
                   <input
                     type="file"
                     name="panCardOrGstFile"
                     onChange={handleChange}
-                    accept=".pdf,.jpg,.jpeg,.png"
+                    accept=".pdf"
                     required
                     className="p-2 border border-gray-300 rounded bg-gray-100"
                   />

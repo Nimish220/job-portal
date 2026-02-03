@@ -1,24 +1,25 @@
   import { Recruiter } from "../models/Recruiter.js";
   import cloudinary from "../config/cloudinaryConfig.js";
   import bcrypt from "bcryptjs";
+  import crypto from 'crypto';
+  import { sendEmail } from '../utils/sendEmail.js';
   import jwt from "jsonwebtoken";
   import { Job } from "../models/Job.js";
   import { Internship } from "../models/Internship.js";
-import { User} from "../models/User.js";
-import { Notification } from "../models/Notification.js";
-import { uploadToCloudinary } from "../config/cloudinaryConfig.js";
+  import { User} from "../models/User.js";
+  import { Notification } from "../models/Notification.js";
+  import { uploadToCloudinary } from "../config/cloudinaryConfig.js";
   // LOGIN RECRUITER
   export const loginRecruiter = async (req, res) => {
     const { email, password } = req.body;
     try {
       const recruiter = await Recruiter.findOne({ email });
       if (!recruiter)
-        return res.status(404).json({ message: "Recruiter not found" });
+        return res.status(404).json({ success: false,message: "Recruiter not found" });
 
       const isMatch = await bcrypt.compare(password, recruiter.password);
       if (!isMatch)
-        return res.status(400).json({ message: "Invalid credentials" });
-
+        return res.status(400).json({ success: false, message: "Invalid credentials" });
       const token = jwt.sign({ id: recruiter._id }, process.env.JWT_SECRET, {
         expiresIn: "1h",
       });
@@ -711,4 +712,80 @@ export const notifyApplicant = async (req, res) => {
     console.error("Error in notifyApplicant:", error);
     res.status(500).json({ success: false, error: error.message });
   }
+};
+
+export const forgotPasswordRecruiter = async (req, res) => {
+    let recruiter;
+    try {
+        const { email } = req.body;
+        recruiter = await Recruiter.findOne({ email });
+
+        if (!recruiter) {
+            return res.status(404).json({ success: false, message: "Recruiter not found" });
+        }
+
+        const resetToken = crypto.randomBytes(20).toString('hex');
+        recruiter.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        recruiter.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 mins
+
+        await recruiter.save({ validateBeforeSave: false });
+
+        // Use a recruiter-specific route if your frontend handles them differently
+        const resetUrl = `${process.env.FRONTEND_URL}/recruiters/reset-password/${resetToken}`;
+        
+        await sendEmail({
+            email: recruiter.email,
+            subject: 'Recruiter Password Reset Request',
+            message: `Click here to reset your recruiter account password: ${resetUrl}`,
+            resetUrl: resetUrl,
+        });
+
+        res.status(200).json({ success: true, message: `Reset link sent to ${email}` });
+    } catch (error) {
+        if (recruiter) {
+            recruiter.resetPasswordToken = undefined;
+            recruiter.resetPasswordExpire = undefined;
+            await recruiter.save({ validateBeforeSave: false });
+        }
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// backend/controllers/recruiterController.js
+
+export const resetPasswordRecruiter = async (req, res) => {
+    try {
+        // 1. Hash the incoming plain-text token from the URL
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(req.params.token)
+            .digest('hex');
+
+        // 2. Find recruiter where hashed token matches AND hasn't expired
+        const recruiter = await Recruiter.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpire: { $gt: Date.now() } // $gt means "Greater Than" now
+        });
+
+        if (!recruiter) {
+            // This is likely why you get a 400
+            return res.status(400).json({ 
+                success: false, 
+                message: "Token is invalid or has expired." 
+            });
+        }
+
+        // 3. Hash the new password and save
+        recruiter.password = await bcrypt.hash(req.body.password, 10);
+        
+        // 4. Clear reset fields so token can't be used again
+        recruiter.resetPasswordToken = undefined;
+        recruiter.resetPasswordExpire = undefined;
+
+        await recruiter.save();
+
+        res.status(200).json({ success: true, message: "Password reset successful!" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };
