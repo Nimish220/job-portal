@@ -1,5 +1,5 @@
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-
 import LandingPage from './pages/LandingPage';
 import RecruiterLogin from './RecruiterPages/Login_SignUp/RecruiterLogin';
 import RecruiterRegister from './RecruiterPages/Login_SignUp/RecruiterRegister';

@@ -26,11 +26,17 @@ app.set("trust proxy", 1);
 //  Allow credentials and specific origins to resolve 403 Forbidden errors
 app.use(
   cors({
-    origin: [
-        "http://localhost:5173",
-        "https://job-portal-frontend-two-kappa.vercel.app",
-        "https://job-portal-frontend-4465.onrender.com"
-    ],
+    origin: (origin, callback) => {
+      // 1. Allow requests with no origin (like mobile apps)
+      // 2. Allow localhost for your local development
+      // 3. Allow ANY subdomain ending in .vercel.app
+      if (!origin || origin.startsWith("http://localhost") || origin.endsWith(".vercel.app")) {
+        callback(null, true);
+      } else {
+        // Blocks unauthorized domains for security
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true, // Required for authentication cookies
   })
 );
