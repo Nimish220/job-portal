@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { axiosInstance } from '../utils/axiosInstance.js';
 import { toast } from 'react-toastify';
 import { getCookie } from '../utils/getCookie';
-
+import recruiterStore from './recruiterStore';
 const useUserStore = create((set, get) => {
   const store = {
     loading: false,
@@ -14,10 +14,10 @@ const useUserStore = create((set, get) => {
 
     fetchUser: async () => {
   try {
-    console.log('Calling /users/me...');
+    //console.log('Calling /users/me...');
     const response = await axiosInstance.get('/users/me');
     const fetchedUser = response.data.user;
-    console.log('Fetched user:', fetchedUser);
+    //console.log('Fetched user:', fetchedUser);
     set({ user: fetchedUser, fetchedUser: true });
   } catch (error) {
     const status = error?.response?.status;
@@ -26,7 +26,6 @@ const useUserStore = create((set, get) => {
     if (status !== 401 && status !== 403) {
       console.error('Unexpected error fetching user:', message);
     }
-
     
     set({ user: null, fetchedUser: true });
   }
@@ -35,18 +34,32 @@ const useUserStore = create((set, get) => {
 
 
     login: async ({ email, password }) => {
+
       set({ loading: true });
       try {
         const response = await axiosInstance.post('/users/login', { email, password });
         toast.success('Login Successful');
+        recruiterStore.setState({ recruiter: null });
         localStorage.setItem("token", response.data.token);
         set({ user: response.data.user, loading: false });
         return { success: true };
       } catch (error) {
+        const status = error?.response?.status;
         const message = error?.response?.data?.message || 'Login failed';
+          if (import.meta.env.MODE === 'development') {
+            if (status === 401) {
+              console.warn(" Login 401: Invalid credentials or expired session.");
+            } else if (status === 403) {
+              console.warn(" Login 403: Access denied for this role.");
+            } else if(status === 404){
+              console.warn(" Login 404: User not found.");
+            }else {
+              console.error(` Login Error (${status}):`, message);
+            }
+          }
         toast.error(message);
         set({ loading: false });
-        return { success: false };
+        return { success: false, message };
       }
     },
 

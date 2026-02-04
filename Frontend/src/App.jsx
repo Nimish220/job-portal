@@ -29,7 +29,7 @@ import ApplicantsProfile from './RecruiterPages/ApplicantsProfile.jsx';
 import JobPage from './pages/JobPage.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
 import ChangePassword from './RecruiterPages/RecruiterData/ChangePassword.jsx';
-import  userStore  from './store/userStore';
+import  useUserStore  from './store/userStore';
 import recruiterStore from './store/recruiterStore';
 // import JobDetails from "./pages/JobDetails";
 //  NEW IMPORT for Apply Now Page
@@ -48,22 +48,34 @@ import ResetPassword from "./pages/ResetPassword";
 import RecruiterForgotPassword from './RecruiterPages/Login_SignUp/RecruiterForgotPassword.jsx';
 import RecruiterResetPassword from './RecruiterPages/Login_SignUp/RecruiterResetPassword.jsx';
 function App() {
-  
+  const [appLoading, setAppLoading] = React.useState(true);  // This prevents "Redirect on Refresh" by waiting for initApp to finish
 // Inside your App function, before the return statement
 useEffect(() => {
   const initApp = async () => {
     // Check if a token exists in localStorage before trying to fetch
     const token = localStorage.getItem("token");
     if (token) {
-      // These calls will now use the token in the header via your interceptor
-      await Promise.all([
-        userStore.getState().fetchUser(),
-        recruiterStore.getState().fetchRecruiter()
-      ]);
+      // 1. Try to fetch the Recruiter first
+      await recruiterStore.getState().fetchRecruiter();
+      
+      // 2. ONLY fetch the user if a recruiter wasn't found
+      const isRecruiter = recruiterStore.getState().recruiter;
+      if (!isRecruiter) {
+        await useUserStore.getState().fetchUser();
+      }
     }
+    setAppLoading(false);
   };
   initApp();
 }, []);
+
+if (appLoading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#5F9D08]"></div>
+      </div>
+    );
+  }
 
   return (
     

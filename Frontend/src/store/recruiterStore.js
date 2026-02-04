@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { axiosInstance } from "../utils/axiosInstance"; //  fixed path
 import { toast } from "react-toastify";
-
+import useUserStore from "./userStore";
 const recruiterStore = create((set) => ({
   loading: false,
   recruiter: null,
@@ -17,12 +17,26 @@ const recruiterStore = create((set) => ({
       toast.success("Login Successfull");
       return { success: true };
     } catch (error) {
-      const msg = error.response.data.message;
-      toast.error(msg);
+      const status = error?.response?.status;
+        const message = error?.response?.data?.message || 'Login failed';
+          if (import.meta.env.MODE === 'development') {
+            if (status === 401) {
+              console.warn(" Recruiter Login 401: Invalid credentials or expired session.");
+            } else if (status === 403) {
+              console.warn(" Recruiter Login 403: Access denied for this role.");
+            } else if(status === 404){
+              console.warn(" Recruiter Login 404: User not found.");
+            }else {
+              console.error(` Recruiter Login Error (${status}):`, message);
+            }
+          }
+      toast.error(message);
       set({ loading: false });
+      return { success: false, message };
     }
   },
   fetchRecruiter: async () => {
+  if (useUserStore.getState().user) return;
   set({ loading: true });   //added fetch for recruiter along with page restrictions
   try {
     const res = await axiosInstance.get("/recruiters/me");
