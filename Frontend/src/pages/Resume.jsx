@@ -173,8 +173,20 @@ const handleRename = async () => {
             <span className="text-sm uppercase tracking-wide">{notification.message}</span>
           </motion.div>
         )}
-      </AnimatePresence>
 
+      </AnimatePresence>
+        <AnimatePresence>
+        {isSidebarOpen && (
+          <div className="fixed inset-0 z-[150] lg:hidden"> 
+            {/* Added fixed inset-0 and z-index to ensure it covers the screen */}
+            <Sidebar 
+              isOpen={isSidebarOpen} 
+              isMobile={true} 
+              closeSidebar={() => setIsSidebarOpen(false)} 
+            />
+          </div>
+        )}
+      </AnimatePresence>
       <NavSearchBar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} showHamburger={true} />
       
       <div className='flex flex-col lg:flex-row min-h-screen'>
@@ -276,7 +288,7 @@ const handleRename = async () => {
                           className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl border border-emerald-100 bg-emerald-50 text-[#5F9D08] transition-all active:scale-90"
                         >
                           <FiDownload size={18} />
-                          <span className="text-[8px] font-black uppercase tracking-tighter">Save</span>
+                          <span className="text-[8px] font-black uppercase tracking-tighter">Download</span>
                         </button>
 
                         {/* Rename (Amber) */}
@@ -297,7 +309,7 @@ const handleRename = async () => {
                           className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl border border-rose-100 bg-rose-50 text-rose-600 transition-all active:scale-90"
                         >
                           <FiTrash2 size={18} />
-                          <span className="text-[8px] font-black uppercase tracking-tighter">Purge</span>
+                          <span className="text-[8px] font-black uppercase tracking-tighter">Delete</span>
                         </button>
                       </div>
                     </div>
