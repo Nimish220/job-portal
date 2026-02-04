@@ -39,6 +39,7 @@ const useUserStore = create((set, get) => {
       try {
         const response = await axiosInstance.post('/users/login', { email, password });
         toast.success('Login Successful');
+        localStorage.setItem("token", response.data.token);
         set({ user: response.data.user, loading: false });
         return { success: true };
       } catch (error) {
@@ -72,6 +73,7 @@ const useUserStore = create((set, get) => {
       set({ loading: true });
       try {
         await axiosInstance.post('/users/logout');
+        localStorage.removeItem("token");
         set({ user: null, loading: false });
         toast.success('Logged out successfully');
         return { success: true };

@@ -49,6 +49,21 @@ import RecruiterForgotPassword from './RecruiterPages/Login_SignUp/RecruiterForg
 import RecruiterResetPassword from './RecruiterPages/Login_SignUp/RecruiterResetPassword.jsx';
 function App() {
   
+// Inside your App function, before the return statement
+useEffect(() => {
+  const initApp = async () => {
+    // Check if a token exists in localStorage before trying to fetch
+    const token = localStorage.getItem("token");
+    if (token) {
+      // These calls will now use the token in the header via your interceptor
+      await Promise.all([
+        userStore.getState().fetchUser(),
+        recruiterStore.getState().fetchRecruiter()
+      ]);
+    }
+  };
+  initApp();
+}, []);
 
   return (
     

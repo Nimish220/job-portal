@@ -45,6 +45,8 @@
           companyName: recruiter.companyName,
         },
         success: true,
+        token,
+        user: { name: recruiter.name, id: recruiter._id, role: recruiter.role },
         message: "Login successfully",
       });
     } catch (err) {

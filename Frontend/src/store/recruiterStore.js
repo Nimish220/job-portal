@@ -12,6 +12,7 @@ const recruiterStore = create((set) => ({
         email,
         password,
       });
+      localStorage.setItem("token", response.data.token);
       set({recruiter: response.data.recruiter, loading: false });
       toast.success("Login Successfull");
       return { success: true };
@@ -67,6 +68,7 @@ const recruiterStore = create((set) => ({
   logout: async () => {
     try {
       const response = await axiosInstance.post("/recruiters/logout");
+      localStorage.removeItem("token");
       set({ recruiter: null, loading: false });
       return { success: true };
     } catch (error) {
