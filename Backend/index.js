@@ -21,22 +21,9 @@ import { getInternships, getInternshipById } from "./controllers/userController.
 dotenv.config();
 const app = express();
 
-// Add this at the very top, before any other middleware or routes
-app.use((req, res, next) => {
-  // Dynamically allow the origin that is making the request
-  res.header("Access-Control-Allow-Origin", req.headers.origin);
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+app.set("trust proxy", 1);
 
-  // This prevents the 500 error by answering the browser's pre-check instantly
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-  next();
-});
-
-// ✅ Allow credentials and specific origins to resolve 403 Forbidden errors
+//  Allow credentials and specific origins to resolve 403 Forbidden errors
 app.use(
   cors({
     origin: [
@@ -56,6 +43,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || "a_very_long_random_string",
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     store: MongoStore.create({
         mongoUrl: process.env.MONGO_URI,
         dbName: "test" 
@@ -67,7 +55,7 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000 
     }
 }));
-// ✅ FIXED: All middleware now uses the /v1 prefix to match the Frontend
+//  FIXED: All middleware now uses the /v1 prefix to match the Frontend
 app.use("/api/recruiters", recruiterRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes); 
@@ -76,7 +64,7 @@ app.use("/api/upload", upload);
 app.use("/api/users/notifications", notificationRoutes);
 app.use("/api/recruiters/notifications", notificationRoutes);
 
-// ✅ FIXED: Get all jobs route
+//  FIXED: Get all jobs route
 app.get("/api/jobs", async (req, res) => {
   try {
     const jobs = await Job.find().populate("recruiter", "companyName name email");
@@ -86,7 +74,7 @@ app.get("/api/jobs", async (req, res) => {
   }
 });
 
-// ✅ FIXED: Get job by ID (Resolves the SyntaxError: Unexpected token '<')
+//  FIXED: Get job by ID (Resolves the SyntaxError: Unexpected token '<')
 app.get("/api/jobs/:id", async (req, res) => {
   try {
     const job = await Job.findById(req.params.id).populate("recruiter", "companyName email");
@@ -99,11 +87,11 @@ app.get("/api/jobs/:id", async (req, res) => {
   }
 });
 
-// ✅ FIXED: Internship routes now versioned
+//  FIXED: Internship routes now versioned
 app.get("/api/internships", getInternships);
 app.get("/api/internships/:id", getInternshipById);
 
-// ✅ FIXED: Applicant details route versioned
+//  FIXED: Applicant details route versioned
 app.get('/api/applicants/:applicantId', protect, isRecruiter, async (req, res) => {
   try {
     const user = await User.findById(req.params.applicantId)
