@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '../components/SideBar';
 import NavSearchBar from '../components/Header/NavSearchBar';
-import axios from 'axios';
+import { axiosInstance } from '../utils/axiosInstance';
 import { 
   FiX, FiCheck, FiMoreVertical, FiEdit2, FiTrash2, 
   FiEye, FiUploadCloud, FiFileText, FiSquare, FiCheckSquare,
@@ -23,7 +23,7 @@ const Resume = () => {
   const [newName, setNewName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const base = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-  const API_URL = `${base}/api/upload/resume`; 
+  //const API_URL = `${base}/api/upload/resume`; 
 
   const triggerNotification = (message, type = 'success') => {
     setNotification({ show: true, message, type });
@@ -32,7 +32,7 @@ const Resume = () => {
 
   const fetchResumes = async () => {
     try {
-      const response = await axios.get(API_URL, { withCredentials: true });
+      const response = await axiosInstance.get('upload/resume');
       setPdfs(response.data.resumes || []);
     } catch (error) { 
         triggerNotification("Failed to load resumes", "error");
@@ -91,10 +91,9 @@ const Resume = () => {
     
     try {
       setIsUploading(true);
-      await axios.post(API_URL, formData, { 
-        headers: { "Content-Type": "multipart/form-data" }, 
-        withCredentials: true 
-      });
+      await axiosInstance.post('upload/resume', formData, { 
+      headers: { "Content-Type": "multipart/form-data" }
+    });
       fetchResumes();
       setShowModal(false);
       setNewPdf({ fileName: '', file: null });
@@ -113,12 +112,12 @@ const Resume = () => {
     if (deleteConfirm.bulk) {
       // Deleting multiple files
       for (const id of selectedIds) {
-        await axios.delete(`${API_URL}/${encodeURIComponent(id)}`, { withCredentials: true });
+        await axiosInstance.delete(`upload/resume/${encodeURIComponent(id)}`);
       }
       setSelectedIds([]);
     } else {
       // Deleting single file
-      await axios.delete(`${API_URL}/${encodeURIComponent(deleteConfirm.id)}`, { withCredentials: true });
+      await axiosInstance.delete(`upload/resume/${encodeURIComponent(deleteConfirm.id)}`);
     }
     
     fetchResumes(); // Refresh the list from the server
@@ -135,7 +134,7 @@ const Resume = () => {
 const handleRename = async () => {
   if (!newName.trim()) return;
   try {
-    await axios.put(`${API_URL}/${renameModal.id}`, 
+    await axiosInstance.put(`upload/resume/${renameModal.id}`, 
       { newFileName: newName }, 
       { withCredentials: true }
     );
