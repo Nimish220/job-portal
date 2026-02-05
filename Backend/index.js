@@ -38,6 +38,8 @@ app.use(
       }
     },
     credentials: true, // Required for authentication cookies
+    // ADD THIS LINE - If this is missing, mobile headers are ignored!
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
   })
 );
 
