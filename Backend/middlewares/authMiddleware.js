@@ -46,7 +46,14 @@ export const protect = async (req, res, next) => {
 // This is specifically for your /auth/check route
 export const silentCheck = async (req, res) => {
   try {
-    const token = req.cookies.token;
+    let token;
+
+    // Check cookies first, then headers
+    if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    } else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+      token = req.headers.authorization.split(" ")[1];
+    }
 
     if (!token) {
       return res.status(200).json({ authenticated: false, role: null });
