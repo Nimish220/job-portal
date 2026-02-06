@@ -1,20 +1,12 @@
 import express from "express";
 import upload from "../middlewares/multer.js";
 import cloudinary from "../config/cloudinaryConfig.js";
-import jwt from "jsonwebtoken";
+import { protect } from "../middlewares/authMiddleware.js";
 import { User } from "../models/User.js";
 import multer from "multer";
 
 const router = express.Router();
 
-const getUserId = (req) => {
-  const token = req.cookies.token;
-  if (!token) return null;
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return decoded.id || decoded._id;
-  } catch (err) { return null; }
-};
 
 // POST Route (Remains robust with buffer upload)
 router.post("/resume", (req, res, next) => {
@@ -29,7 +21,7 @@ router.post("/resume", (req, res, next) => {
   });
 }, async (req, res) => {
   try {
-    const userId = getUserId(req);
+    const userId = req.user._id; //  Using req.user set by protect middleware
     if (!userId || !req.file) return res.status(400).json({ error: "Invalid request" });
 
     const uploadToCloudinary = () => {
@@ -57,9 +49,9 @@ router.post("/resume", (req, res, next) => {
 });
 
 // GET Route (Added safety check for user existence)
-router.get("/resume", async (req, res) => {
+router.get("/resume",protect, async (req, res) => {
   try {
-    const userId = getUserId(req);
+    const userId = await User.findById(req.user._id);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const user = await User.findById(userId);
     const resumeData = user && user.resume ? user.resume : [];
@@ -68,9 +60,9 @@ router.get("/resume", async (req, res) => {
 });
 
 //  FIXED DELETE ROUTE (Added strict null checks to prevent 500 error)
-router.delete("/resume/:resumeId", async (req, res) => {
+router.delete("/resume/:resumeId",protect, async (req, res) => {
   try {
-    const userId = getUserId(req);
+    const userId =req.user._id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const user = await User.findById(userId);
@@ -97,9 +89,9 @@ router.delete("/resume/:resumeId", async (req, res) => {
 });
 
 // @route   PUT /api/upload/resume/:resumeId
-router.put("/resume/:resumeId", async (req, res) => {
+router.put("/resume/:resumeId",protect, async (req, res) => {
   try {
-    const userId = getUserId(req);
+    const userId =req.user._id;
     const { newFileName } = req.body;
 
     if (!newFileName) {

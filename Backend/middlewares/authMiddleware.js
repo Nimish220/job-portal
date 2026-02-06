@@ -42,40 +42,30 @@ export const protect = async (req, res, next) => {
   }
 };
 
-// --- NEW FUNCTION FOR SILENT CHECK (NO 403 RED ERRORS) ---
-// This is specifically for your /auth/check route
 export const silentCheck = async (req, res) => {
   try {
     let token;
-
-    // Check cookies first, then headers
     if (req.cookies && req.cookies.token) {
       token = req.cookies.token;
     } else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
       token = req.headers.authorization.split(" ")[1];
     }
 
-    if (!token) {
-      return res.status(200).json({ authenticated: false, role: null });
-    }
+    if (!token) return res.status(200).json({ authenticated: false, role: null });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Efficiently check both collections at once
+    const [recruiter, user] = await Promise.all([
+      Recruiter.findById(decoded.id).select("-password"),
+      User.findById(decoded.id).select("-password")
+    ]);
 
-    // Check Recruiter
-    const recruiter = await Recruiter.findById(decoded.id).select("-password");
-    if (recruiter) {
-      return res.status(200).json({ authenticated: true, role: "recruiter" });
-    }
-
-    // Check User
-    const user = await User.findById(decoded.id).select("-password");
-    if (user) {
-      return res.status(200).json({ authenticated: true, role: "user" });
-    }
+    if (recruiter) return res.status(200).json({ authenticated: true, role: "recruiter" });
+    if (user) return res.status(200).json({ authenticated: true, role: "user" });
 
     return res.status(200).json({ authenticated: false, role: null });
   } catch (err) {
-    // If token is invalid or expired, just return unauthenticated (no red errors)
     return res.status(200).json({ authenticated: false, role: null });
   }
 };
