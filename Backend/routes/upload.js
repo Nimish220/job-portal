@@ -1,7 +1,7 @@
 import express from "express";
 import upload from "../middlewares/multer.js";
 import cloudinary from "../config/cloudinaryConfig.js";
-import { protect } from "../middlewares/authMiddleware.js";
+import { protect, isSeeker } from "../middlewares/authMiddleware.js";
 import { User } from "../models/User.js";
 import multer from "multer";
 
@@ -9,7 +9,7 @@ const router = express.Router();
 
 
 // POST Route (Remains robust with buffer upload)
-router.post("/resume", (req, res, next) => {
+router.post("/resume",protect, isSeeker, (req, res, next) => {
   upload.single("resume")(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       if (err.code === "LIMIT_FILE_SIZE") return res.status(400).json({ error: "Max limit 2MB" });
@@ -49,18 +49,21 @@ router.post("/resume", (req, res, next) => {
 });
 
 // GET Route (Added safety check for user existence)
-router.get("/resume",protect, async (req, res) => {
+router.get("/resume", protect, isSeeker, async (req, res) => {
   try {
-    const userId = await User.findById(req.user._id);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const user = await User.findById(userId);
-    const resumeData = user && user.resume ? user.resume : [];
+    // req.user is already populated with the full user object by 'protect'
+    const user = req.user; 
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const resumeData = user.resume || [];
     res.status(200).json({ resumes: resumeData });
-  } catch (err) { res.status(500).json({ error: "Fetch failed" }); }
+  } catch (err) { 
+    res.status(500).json({ error: "Fetch failed" }); 
+  }
 });
 
 //  FIXED DELETE ROUTE (Added strict null checks to prevent 500 error)
-router.delete("/resume/:resumeId",protect, async (req, res) => {
+router.delete("/resume/:resumeId",protect, isSeeker, async (req, res) => {
   try {
     const userId =req.user._id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -89,7 +92,7 @@ router.delete("/resume/:resumeId",protect, async (req, res) => {
 });
 
 // @route   PUT /api/upload/resume/:resumeId
-router.put("/resume/:resumeId",protect, async (req, res) => {
+router.put("/resume/:resumeId",protect, isSeeker, async (req, res) => {
   try {
     const userId =req.user._id;
     const { newFileName } = req.body;
