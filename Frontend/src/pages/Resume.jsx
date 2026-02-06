@@ -109,31 +109,31 @@ const Resume = () => {
 
   const processDelete = async () => {
   try {
+    setIsUploading(true); // Start loading state to remove "laggy" feeling
+    
     if (deleteConfirm.bulk) {
-      // Deleting multiple files
-      for (const id of selectedIds) {
-        await axiosInstance.delete(`upload/resume/${encodeURIComponent(id)}`);
-      }
+      await Promise.all(  //  Fire all delete requests at the SAME time
+        selectedIds.map(id => axiosInstance.delete(`upload/resume/${encodeURIComponent(id)}`))
+      );
       setSelectedIds([]);
     } else {
-      // Deleting single file
-      await axiosInstance.delete(`upload/resume/${encodeURIComponent(deleteConfirm.id)}`);
+      await axiosInstance.delete(`upload/resume/${encodeURIComponent(deleteConfirm.id)}`);   // Deleting single file
     }
     
-    fetchResumes(); // Refresh the list from the server
+    await fetchResumes(); 
     setDeleteConfirm({ show: false, id: null, bulk: false });
     triggerNotification("Item(s) deleted successfully!", "success");
   } catch (err) { 
-    console.error("Delete UI Error:", err);
-    const errorMsg = err.response?.data?.error || "Could not delete item(s)";
-    triggerNotification(errorMsg, "error"); 
-    setDeleteConfirm({ show: false, id: null, bulk: false });
+    triggerNotification("Could not delete item(s)", "error"); 
+  } finally {
+    setIsUploading(false); //  Stop loading state
   }
 };
 
 const handleRename = async () => {
   if (!newName.trim()) return;
   try {
+    setIsUploading(true);
     await axiosInstance.put(`upload/resume/${renameModal.id}`, 
       { newFileName: newName }, 
       { withCredentials: true }
@@ -144,6 +144,9 @@ const handleRename = async () => {
     triggerNotification("File renamed successfully!");
   } catch (error) {
     triggerNotification("Rename failed", "error");
+  }
+  finally {
+    setIsUploading(false); //  Stop loading spinner
   }
 };
 
@@ -195,7 +198,7 @@ const handleRename = async () => {
           {/* Header Section */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
              <div>
-                <h2 className="text-4xl font-black text-slate-900 tracking-tight">Resume Vault</h2>
+                <h2 className="text-4xl font-black text-slate-900 tracking-tight">Resume</h2>
                 <p className="text-slate-400 font-medium mt-1">Standard 2MB PDF storage for your job hunt.</p>
              </div>
              <div className="flex items-center gap-4 w-full md:w-auto">
@@ -220,18 +223,30 @@ const handleRename = async () => {
           <AnimatePresence>
             {selectedIds.length > 0 && (
               <motion.div 
-                initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }}
-                className="mb-8 bg-slate-900 text-white p-5 rounded-[2rem] flex items-center justify-between shadow-2xl border border-white/10"
+                initial={{ y: 20, opacity: 0 }} 
+                animate={{ y: 0, opacity: 1 }} 
+                exit={{ y: 20, opacity: 0 }}
+                className="mb-8 bg-slate-900 text-white p-5 rounded-[2rem] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl border border-white/10"
               >
-                <div className="flex items-center gap-4 ml-4">
-                  <div className="w-8 h-8 bg-[#5F9D08] rounded-full flex items-center justify-center text-xs font-black">{selectedIds.length}</div>
+                <div className="flex items-center gap-4 sm:ml-4">
+                  <div className="w-8 h-8 bg-[#5F9D08] rounded-full flex items-center justify-center text-xs font-black">
+                    {selectedIds.length}
+                  </div>
                   <span className="font-bold tracking-tight uppercase text-xs">Items Selected</span>
                 </div>
-                <div className="flex gap-3">
-                  <button onClick={() => setSelectedIds([])} className="px-6 py-2 hover:bg-white/10 rounded-xl transition-all text-xs font-black uppercase">Cancel</button>
+                
+                <div className="flex gap-3 w-full sm:w-auto justify-center sm:justify-end">
+                  <button 
+                    onClick={() => setSelectedIds([])} 
+                    disabled={isUploading}
+                    className="px-6 py-2 hover:bg-white/10 rounded-xl transition-all text-xs font-black uppercase disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
                   <button 
                     onClick={() => setDeleteConfirm({show: true, bulk: true})}
-                    className="bg-rose-500 hover:bg-rose-600 px-6 py-3 rounded-xl transition-all text-xs font-black flex items-center gap-2 uppercase tracking-widest"
+                    disabled={isUploading}
+                    className="bg-rose-500 hover:bg-rose-600 px-6 py-3 rounded-xl transition-all text-xs font-black flex items-center gap-2 uppercase tracking-widest disabled:opacity-70"
                   >
                     <FiTrash2 size={16}/> Delete All
                   </button>
@@ -276,7 +291,7 @@ const handleRename = async () => {
                         className="w-full relative overflow-hidden bg-[#5F9D08] text-white py-4 rounded-[1.2rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-green-100 transition-all active:scale-95"
                       >
                         <FiEye size={18} /> 
-                        <span>View Asset</span>
+                        <span>View Resume</span>
                       </motion.button>
                       
                       {/* SECONDARY: Uniform Multi-color Toolbar */}
@@ -335,7 +350,7 @@ const handleRename = async () => {
               onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-8">
-                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Upload Vault</h3>
+                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Upload Resume</h3>
                 <button onClick={() => setShowModal(false)} className="text-slate-300 hover:text-slate-900 transition-colors"><FiX size={28}/></button>
               </div>
               
@@ -378,25 +393,56 @@ const handleRename = async () => {
       </AnimatePresence>
 
       {/* Confirmation Modal - Removed Blurry Backdrop */}
-      <AnimatePresence>
-        {deleteConfirm.show && (
-          <div className="fixed inset-0 bg-slate-900/60 flex justify-center items-center z-[260] p-4">
-             <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }}
-                className="bg-white p-10 rounded-[3rem] shadow-2xl max-w-sm w-full text-center"
-             >
-                <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <FiAlertCircle size={40} />
+            <AnimatePresence>
+              {deleteConfirm.show && (
+                <div className="fixed inset-0 bg-slate-900/60 flex justify-center items-center z-[260] p-4">
+                  <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }}
+                      className="bg-white p-10 rounded-[3rem] shadow-2xl max-w-sm w-full text-center"
+                  >
+                      <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <FiAlertCircle size={40} />
+                      </div>
+                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-2">
+                        {deleteConfirm.bulk ? "Delete All Selected?" : "Delete File?"}
+                      </h3>
+                      <p className="text-slate-400 font-medium text-sm mb-10 leading-relaxed px-4">
+                        This action is permanent and cannot be undone.
+                      </p>
+                      <div className="flex gap-4">
+                        <button 
+                          onClick={() => setDeleteConfirm({show:false})} 
+                          disabled={isUploading}
+                          className="flex-1 py-4 text-slate-400 font-black uppercase text-xs tracking-widest disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                        
+                        <button 
+                          onClick={processDelete} 
+                          disabled={isUploading} 
+                          className="flex-1 bg-rose-500 text-white rounded-2xl font-black shadow-xl shadow-rose-100 uppercase text-xs tracking-widest flex items-center justify-center gap-2 min-h-[52px]"
+                        >
+                          {isUploading ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              <span>Deleting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FiTrash2 size={16} />
+                              <span>Delete {deleteConfirm.bulk ? "All" : ""}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                  </motion.div>
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-2">Delete File?</h3>
-                <p className="text-slate-400 font-medium text-sm mb-10 leading-relaxed px-4">This action is permanent and cannot be undone.</p>
-                <div className="flex gap-4">
-                   <button onClick={() => setDeleteConfirm({show:false})} className="flex-1 py-4 text-slate-400 font-black uppercase text-xs tracking-widest">Cancel</button>
-                   <button onClick={processDelete} className="flex-1 bg-rose-500 text-white rounded-2xl font-black shadow-xl shadow-rose-100 uppercase text-xs tracking-widest">Delete</button>
-                </div>
-             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              )}
+            </AnimatePresence>
+
       {/* Rename Modal */}
       <AnimatePresence>
         {renameModal.show && (
@@ -416,7 +462,19 @@ const handleRename = async () => {
               </div>
               <div className="flex gap-4">
                 <button onClick={() => setRenameModal({show:false})} className="flex-1 py-4 text-slate-400 font-black uppercase text-xs tracking-widest">Cancel</button>
-                <button onClick={handleRename} className="flex-[2] bg-amber-500 text-white py-4 rounded-2xl font-black shadow-xl uppercase text-xs tracking-widest active:scale-95 transition-all">Save Changes</button>
+                <button onClick={handleRename} disabled={isUploading} className="flex-[2] bg-amber-500 text-white py-4 rounded-2xl font-black shadow-xl uppercase text-xs tracking-widest active:scale-95 transition-all">
+                  {isUploading ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Saving...</span>
+                        </div>
+                      ) : (
+                        "Save Changes"
+                      )}
+                </button>
               </div>
             </motion.div>
           </div>

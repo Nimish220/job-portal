@@ -76,7 +76,7 @@ router.delete("/resume/:resumeId",protect, isSeeker, async (req, res) => {
     // Only attempt Cloudinary delete if the file was actually uploaded to the cloud
     if (resume && resume.publicId) {
       try {
-        await cloudinary.uploader.destroy(resume.publicId, { resource_type: "auto" });
+        await cloudinary.uploader.destroy(resume.publicId, { resource_type: "raw" });
       } catch (cloudinaryErr) {
         console.error("Cloudinary Delete Failed:", cloudinaryErr.message);
       }
@@ -84,6 +84,7 @@ router.delete("/resume/:resumeId",protect, isSeeker, async (req, res) => {
 
     // Pull from MongoDB even if Cloudinary fails (to clean up broken links)
     await User.findByIdAndUpdate(userId, { $pull: { resume: { _id: req.params.resumeId } } });
+    console.log(` File: "${resume?.fileName || 'Unknown'}" deleted for User: ${user.name || user.fullName || userId}`);
     res.status(200).json({ message: "Deleted successfully" });
   } catch (err) {
     console.error("Delete error:", err);
