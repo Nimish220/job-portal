@@ -91,9 +91,12 @@ const Resume = () => {
     
     try {
       setIsUploading(true);
-      await axiosInstance.post('upload/resume', formData, { 
-      headers: { "Content-Type": "multipart/form-data" }
-    });
+      await Promise.all([
+      axiosInstance.post('upload/resume', formData, { 
+        headers: { "Content-Type": "multipart/form-data" }
+      }),
+      new Promise(resolve => setTimeout(resolve, 400)) 
+    ]);
       fetchResumes();
       setShowModal(false);
       setNewPdf({ fileName: '', file: null });
@@ -109,16 +112,17 @@ const Resume = () => {
 
   const processDelete = async () => {
   try {
-    setIsUploading(true); // Start loading state to remove "laggy" feeling
+    setIsUploading(true);
     
-    if (deleteConfirm.bulk) {
-      await Promise.all(  //  Fire all delete requests at the SAME time
-        selectedIds.map(id => axiosInstance.delete(`upload/resume/${encodeURIComponent(id)}`))
-      );
-      setSelectedIds([]);
-    } else {
-      await axiosInstance.delete(`upload/resume/${encodeURIComponent(deleteConfirm.id)}`);   // Deleting single file
-    }
+    // Forces the loader to stay for at least 600ms even if the API is instant
+    const [responses] = await Promise.all([
+      deleteConfirm.bulk 
+        ? Promise.all(selectedIds.map(id => axiosInstance.delete(`upload/resume/${encodeURIComponent(id)}`)))
+        : axiosInstance.delete(`upload/resume/${encodeURIComponent(deleteConfirm.id)}`),
+      new Promise(resolve => setTimeout(resolve, 400)) // UX delay
+    ]);
+
+    if (deleteConfirm.bulk) setSelectedIds([]);
     
     await fetchResumes(); 
     setDeleteConfirm({ show: false, id: null, bulk: false });
@@ -126,7 +130,7 @@ const Resume = () => {
   } catch (err) { 
     triggerNotification("Could not delete item(s)", "error"); 
   } finally {
-    setIsUploading(false); //  Stop loading state
+    setIsUploading(false);
   }
 };
 
@@ -134,10 +138,10 @@ const handleRename = async () => {
   if (!newName.trim()) return;
   try {
     setIsUploading(true);
-    await axiosInstance.put(`upload/resume/${renameModal.id}`, 
-      { newFileName: newName }, 
-      { withCredentials: true }
-    );
+    await Promise.all([
+      axiosInstance.put(`upload/resume/${renameModal.id}`, { newFileName: newName }, { withCredentials: true }),
+      new Promise(resolve => setTimeout(resolve, 400)) 
+    ]);
     fetchResumes();
     setRenameModal({ show: false, id: null, oldName: '' });
     setNewName('');
@@ -220,41 +224,50 @@ const handleRename = async () => {
           </div>
 
           {/* Bulk Selection Bar */}
-          <AnimatePresence>
-            {selectedIds.length > 0 && (
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }} 
-                animate={{ y: 0, opacity: 1 }} 
-                exit={{ y: 20, opacity: 0 }}
-                className="mb-8 bg-slate-900 text-white p-5 rounded-[2rem] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl border border-white/10"
-              >
-                <div className="flex items-center gap-4 sm:ml-4">
-                  <div className="w-8 h-8 bg-[#5F9D08] rounded-full flex items-center justify-center text-xs font-black">
-                    {selectedIds.length}
-                  </div>
-                  <span className="font-bold tracking-tight uppercase text-xs">Items Selected</span>
-                </div>
-                
-                <div className="flex gap-3 w-full sm:w-auto justify-center sm:justify-end">
-                  <button 
-                    onClick={() => setSelectedIds([])} 
-                    disabled={isUploading}
-                    className="px-6 py-2 hover:bg-white/10 rounded-xl transition-all text-xs font-black uppercase disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={() => setDeleteConfirm({show: true, bulk: true})}
-                    disabled={isUploading}
-                    className="bg-rose-500 hover:bg-rose-600 px-6 py-3 rounded-xl transition-all text-xs font-black flex items-center gap-2 uppercase tracking-widest disabled:opacity-70"
-                  >
-                    <FiTrash2 size={16}/> Delete All
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  <AnimatePresence>
+                    {selectedIds.length > 0 && (
+                      <motion.div 
+                        initial={{ y: 20, opacity: 0 }} 
+                        animate={{ y: 0, opacity: 1 }} 
+                        exit={{ y: 20, opacity: 0 }}
+                        /* 1. Changed pr-6 to pr-4 for better mobile spacing
+                          2. Added flex-wrap for very small screens
+                        */
+                        className="mb-8 bg-[#5F9D08] text-white py-3 pl-4 pr-4 rounded-[2rem] flex flex-row items-center justify-between gap-2 shadow-2xl border border-white/20 flex-wrap sm:flex-nowrap"
+                      >
+                        {/* Left Section: Count */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="w-7 h-7 bg-white text-[#5F9D08] rounded-full flex items-center justify-center text-[11px] font-black shadow-sm">
+                            {selectedIds.length}
+                          </div>
+                          <span className="font-black tracking-tight uppercase text-[10px] whitespace-nowrap">Selected</span>
+                        </div>
 
+                        {/* Right Section: Buttons */}
+                        <div className="flex gap-2 items-center ml-auto">
+                          <button 
+                            onClick={() => setSelectedIds([])} 
+                            disabled={isUploading}
+                            className="px-2 py-2 hover:bg-white/20 rounded-xl transition-all text-[11px] font-black uppercase disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                          <button 
+                            onClick={() => setDeleteConfirm({show: true, bulk: true})}
+                            disabled={isUploading}
+                            /* Using 'xs:inline' to hide text on tiny screens and only show the icon
+                              to prevent the button from popping out of the green bar.
+                            */
+                            className="bg-rose-600 hover:bg-rose-700 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all text-[11px] font-black flex items-center gap-2 uppercase tracking-widest disabled:opacity-70 shadow-lg shrink-0"
+                          >
+                            <FiTrash2 className="text-[14px]"/> 
+                            <span className="hidden xs:inline">Delete All</span>
+                            <span className="inline xs:hidden text-[10px]">Delete</span>
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
           {/* Main Grid */}
           {pdfs.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
