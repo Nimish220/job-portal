@@ -100,49 +100,45 @@ const Register = () => {
             <div className="text-2xl font-bold text-[#4CAF50]">JobPortal</div>
   
             {/* Desktop Menu */}
-            <ul className="hidden md:flex gap-8 text-gray-700 font-medium flex-1 justify-center">
-              <li><Link to="/" className="hover:text-[#4CAF50]">Home</Link></li>
-              <li><Link to="/about" className="hover:text-[#4CAF50]">About</Link></li>
-              <li><Link to="/subscription" className="hover:text-[#4CAF50]">Plans</Link></li>
-              <li><Link to="/support" className="hover:text-[#4CAF50]">Support</Link></li>
-            </ul>
-  
-            {/* Desktop CTA */}
-            <div className="hidden md:flex items-center gap-4 relative" ref={loginRef}>
-              {/* Dropdown Login */}
-              <button
-                onClick={() => setIsLoginOpen(!isLoginOpen)}
-                className="hover:text-[#4CAF50] font-medium flex items-center gap-1"
-              >
-                Login ▾
-              </button>
-  
-              {isLoginOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-lg rounded-md border z-50">
-                  <Link
-                    to="/users/login"
-                    onClick={() => setIsLoginOpen(false)}
-                    className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
-                  >
-                    Job Seeker Login
-                  </Link>
-                  <Link
-                    to="/recruiters/login"
-                    onClick={() => setIsLoginOpen(false)}
-                    className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
-                  >
-                    Recruiter Login
-                  </Link>
-                </div>
-              )}
-  
-              <Link
-                to="/recruiters/register"
-                className="bg-[#5F9D08] text-white px-5 py-2 rounded-md font-semibold hover:bg-[#45a049] transition shadow-md"
-              >
-                Post a Job
-              </Link>
-            </div>
+                       <div className="hidden md:flex items-center gap-4">
+                        
+                        {/* STEP 1: Put 'relative' here so the dropdown anchors only to this button */}
+                        <div className="relative" ref={loginRef}> 
+                          <button
+                            onClick={() => setIsLoginOpen(!isLoginOpen)}
+                            className="hover:text-[#4CAF50] font-medium flex items-center gap-1 cursor-pointer"
+                          >
+                            Login ▾
+                          </button>
+            
+                          {isLoginOpen && (
+                            /* STEP 2: Change 'right-0' to 'left-0' */
+                            <div className="absolute left-0 top-full mt-4 w-52 bg-white shadow-2xl rounded-lg border border-black z-50 overflow-hidden">
+                              <Link
+                                to="/users/login"
+                                onClick={() => setIsLoginOpen(false)}
+                                className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
+                              >
+                                Job Seeker Login
+                              </Link>
+                              <Link
+                                to="/recruiters/login"
+                                onClick={() => setIsLoginOpen(false)}
+                                className="block px-4 py-2 hover:bg-gray-100 text-gray-700 "
+                              >
+                                Recruiter Login
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+            
+                        <Link
+                          to="/recruiters/register"
+                          className="bg-[#5F9D08] text-white px-5 py-2 rounded-md font-semibold hover:bg-[#45a049] transition shadow-md"
+                        >
+                          Post a Job
+                        </Link>
+                      </div>
   
             {/* Mobile Hamburger */}
             <button
