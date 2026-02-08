@@ -1,4 +1,4 @@
-import React from "react";
+import React,{useRef} from "react";
 import { motion,AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -6,7 +6,8 @@ import { useState } from "react";
 
 function SupportPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const loginRef = useRef(null);
     // Motion variants
     const sidebarVariants = {
       hidden: { x: "100%",opacity: 0 },
@@ -19,13 +20,15 @@ function SupportPage() {
       visible: { opacity: 1, y: 0 }
     };
 
-  return (
-    <main>
-      {/* Hero Section */}
+return (
+    <>
+      {/* Navbar */}
       <header className="bg-white shadow-md sticky top-0 z-50">
-        <nav className="flex justify-between items-center py-4 px-8 md:px-16">
-          <div className="text-2xl font-bold text-[#4CAF50]"><Link to="/" className="hover:text-[#4CAF50]">JobPortal</Link></div>
+        <nav className="flex justify-between items-center py-4 px-6 md:px-16">
+          {/* Logo */}
+          <div className="text-2xl font-bold text-[#4CAF50]">JobPortal</div>
 
+          {/* Desktop Menu */}
           <ul className="hidden md:flex gap-8 text-gray-700 font-medium flex-1 justify-center">
             <li><Link to="/" className="hover:text-[#4CAF50]">Home</Link></li>
             <li><Link to="/about" className="hover:text-[#4CAF50]">About</Link></li>
@@ -33,15 +36,44 @@ function SupportPage() {
             <li><Link to="/support" className="hover:text-[#4CAF50]">Support</Link></li>
           </ul>
 
-          <div className="hidden md:flex items-center gap-4">
-                      <Link to="/users/login" className="hover:text-[#4CAF50] font-medium">Login</Link>
-                      <Link
-                        to="/recruiters/register"
-                        className="bg-[#4CAF50] text-white px-5 py-2 rounded-md font-semibold hover:bg-[#45a049] transition shadow-md"
-                      >
-                        Post a Job
-                      </Link>
-                    </div>
+          {/* Desktop CTA */}
+          <div className="hidden md:flex items-center gap-4 relative" ref={loginRef}>
+            {/* Dropdown Login */}
+            <button
+              onClick={() => setIsLoginOpen(!isLoginOpen)}
+              className="hover:text-[#4CAF50] font-medium flex items-center gap-1"
+            >
+              Login ▾
+            </button>
+
+            {isLoginOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-lg rounded-md border z-50">
+                <Link
+                  to="/users/login"
+                  onClick={() => setIsLoginOpen(false)}
+                  className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
+                >
+                  Job Seeker Login
+                </Link>
+                <Link
+                  to="/recruiters/login"
+                  onClick={() => setIsLoginOpen(false)}
+                  className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
+                >
+                  Recruiter Login
+                </Link>
+              </div>
+            )}
+
+            <Link
+              to="/recruiters/register"
+              className="bg-[#5F9D08] text-white px-5 py-2 rounded-md font-semibold hover:bg-[#45a049] transition shadow-md"
+            >
+              Post a Job
+            </Link>
+          </div>
+
+          {/* Mobile Hamburger */}
           <button
             className="md:hidden flex flex-col gap-1 focus:outline-none"
             onClick={() => setIsMenuOpen(true)}
@@ -52,6 +84,8 @@ function SupportPage() {
           </button>
         </nav>
       </header>
+
+      {/* Sidebar for Mobile */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.aside
@@ -59,7 +93,7 @@ function SupportPage() {
             animate="visible"
             exit="exit"
             variants={sidebarVariants}
-            className="absolute top-0 right-0  min-w-1/4  bg-white rounded-xl shadow-2xl z-50 p-8 flex flex-col"
+            className="absolute top-0 right-0 min-w-1/4 bg-white rounded-xl shadow-2xl z-50 p-8 flex flex-col"
           >
             {/* Close Button */}
             <button
@@ -75,12 +109,41 @@ function SupportPage() {
               <li><Link to="/about" onClick={() => setIsMenuOpen(false)}>About</Link></li>
               <li><Link to="/subscription" onClick={() => setIsMenuOpen(false)}>Plans</Link></li>
               <li><Link to="/support" onClick={() => setIsMenuOpen(false)}>Support</Link></li>
-              <li><Link to="/users/login" onClick={() => setIsMenuOpen(false)}>Login</Link></li>
+
+              {/* Mobile Login Dropdown */}
+              <li>
+                <details className="group">
+                  <summary className="cursor-pointer list-none hover:text-[#4CAF50]">
+                    Login ▾
+                  </summary>
+                  <ul className="mt-2 bg-white shadow-lg rounded-md border overflow-hidden">
+                    <li>
+                      <Link
+                        to="/users/login"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
+                      >
+                        Job Seeker Login
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/recruiters/login"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
+                      >
+                        Recruiter Login
+                      </Link>
+                    </li>
+                  </ul>
+                </details>
+              </li>
+
               <li>
                 <Link
                   to="/recruiters/register"
                   onClick={() => setIsMenuOpen(false)}
-                  className="bg-[#4CAF50] text-white px-4 py-2 rounded-md shadow hover:bg-[#45a049] transition"
+                  className="bg-[#5F9D08] text-white px-4 py-2 rounded-md shadow hover:bg-[#45a049] transition"
                 >
                   Post a Job
                 </Link>
@@ -171,13 +234,13 @@ function SupportPage() {
           ></textarea>
           <motion.button
             whileHover={{ scale: 1.05, y: -2 }}
-            className="px-8 py-4 bg-[#4CAF50] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-[#45a049] transition"
+            className="px-8 py-4 bg-[#5F9D08] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-[#45a049] transition"
           >
             Send Message
           </motion.button>
         </form>
       </section>
-    </main>
+    </>
   );
 }
 

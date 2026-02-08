@@ -35,7 +35,7 @@ const TermsAndConditions = () => {
                       <Link to="/users/login" className="hover:text-[#4CAF50] font-medium">Login</Link>
                       <Link
                         to="/recruiters/register"
-                        className="bg-[#4CAF50] text-white px-5 py-2 rounded-md font-semibold hover:bg-[#45a049] transition shadow-md"
+                        className="bg-[#5F9D08] text-white px-5 py-2 rounded-md font-semibold hover:bg-[#45a049] transition shadow-md"
                       >
                         Post a Job
                       </Link>
@@ -78,7 +78,7 @@ const TermsAndConditions = () => {
                 <Link
                   to="/recruiters/register"
                   onClick={() => setIsMenuOpen(false)}
-                  className="bg-[#4CAF50] text-white px-4 py-2 rounded-md shadow hover:bg-[#45a049] transition"
+                  className="bg-[#5F9D08] text-white px-4 py-2 rounded-md shadow hover:bg-[#45a049] transition"
                 >
                   Post a Job
                 </Link>
@@ -132,7 +132,7 @@ const TermsAndConditions = () => {
         <motion.div whileHover={{ scale: 1.05 }} className="mt-8">
           <Link
             to="/"
-            className="inline-block bg-[#4CAF50] text-white px-6 py-3 rounded-lg shadow hover:bg-[#45a049] transition"
+            className="inline-block bg-[#5F9D08] text-white px-6 py-3 rounded-lg shadow hover:bg-[#45a049] transition"
           >
             ⬅ Back to Home
           </Link>

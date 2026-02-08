@@ -78,7 +78,7 @@ function LandingPage() {
 
             <Link
               to="/recruiters/register"
-              className="bg-[#4CAF50] text-white px-5 py-2 rounded-md font-semibold hover:bg-[#45a049] transition shadow-md"
+              className="bg-[#5F9D08] text-white px-5 py-2 rounded-md font-semibold hover:bg-[#45a049] transition shadow-md"
             >
               Post a Job
             </Link>
@@ -154,7 +154,7 @@ function LandingPage() {
                 <Link
                   to="/recruiters/register"
                   onClick={() => setIsMenuOpen(false)}
-                  className="bg-[#4CAF50] text-white px-4 py-2 rounded-md shadow hover:bg-[#45a049] transition"
+                  className="bg-[#5F9D08] text-white px-4 py-2 rounded-md shadow hover:bg-[#45a049] transition"
                 >
                   Post a Job
                 </Link>
@@ -184,7 +184,7 @@ function LandingPage() {
               <Link to="/users/register">
                 <motion.button
                   whileHover={{ scale: 1.05, y: -2 }}
-                  className="py-3 px-6 rounded-md text-base sm:text-lg font-semibold bg-[#4CAF50] text-white shadow-lg hover:shadow-xl hover:bg-[#45a049] transition-transform"
+                  className="py-3 px-6 rounded-md text-base sm:text-lg font-semibold bg-[#5F9D08] text-white shadow-lg hover:shadow-xl hover:bg-[#45a049] transition-transform"
                 >
                   I’m a Job Seeker
                 </motion.button>
@@ -192,7 +192,7 @@ function LandingPage() {
               <Link to="/recruiters/register">
                 <motion.button
                   whileHover={{ scale: 1.05, y: -2 }}
-                  className="py-3 px-6 rounded-md text-base sm:text-lg font-semibold border-2 border-[#4CAF50] text-[#4CAF50] bg-white shadow-lg hover:bg-[#4CAF50] hover:text-white transition-transform"
+                  className="py-3 px-6 rounded-md text-base sm:text-lg font-semibold border-2 border-[#5F9D08] text-[#5F9D08] bg-white shadow-lg hover:bg-[#5F9D08] hover:text-white transition-transform"
                 >
                   I’m a Recruiter
                 </motion.button>
@@ -237,8 +237,8 @@ function LandingPage() {
                 whileHover={{ scale: 1.05, y: -5 }}
                 className="bg-gradient-to-br from-white to-gray-50 p-10 rounded-2xl shadow-xl hover:shadow-2xl transition relative overflow-hidden"
               >
-                <div className="absolute -top-6 -right-6 w-20 h-20 bg-[#4CAF50]/10 rounded-full blur-2xl"></div>
-                <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center bg-[#4CAF50] text-white text-xl font-bold rounded-full shadow-lg">
+                <div className="absolute -top-6 -right-6 w-20 h-20 bg-[#5F9D08]/10 rounded-full blur-2xl"></div>
+                <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center bg-[#5F9D08] text-white text-xl font-bold rounded-full shadow-lg">
                   {item.step}
                 </div>
                 <h3 className="text-2xl font-semibold text-gray-800 mb-2">{item.title}</h3>
@@ -353,9 +353,9 @@ function LandingPage() {
                 whileHover={{ scale: 1.05, y: -5 }}
                 className="bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition relative"
               >
-                <div className="absolute -top-6 -left-6 w-20 h-20 bg-[#4CAF50]/10 rounded-full blur-2xl"></div>
+                <div className="absolute -top-6 -left-6 w-20 h-20 bg-[#5F9D08]/10 rounded-full blur-2xl"></div>
                 <p className="text-gray-600 italic">"{user.feedback}"</p>
-                <h3 className="mt-6 font-semibold text-[#4CAF50]">{user.name}</h3>
+                <h3 className="mt-6 font-semibold text-[#5F9D08]">{user.name}</h3>
                 <p className="text-gray-500 text-sm">{user.role}</p>
               </motion.div>
             ))}
@@ -363,7 +363,7 @@ function LandingPage() {
         </section>
 
         {/* Final CTA */}
-        <section className="py-24 bg-gradient-to-r from-[#4CAF50] to-[#45a049] text-center text-white relative overflow-hidden">
+        <section className="py-24 bg-gradient-to-r from-[#5F9D08] to-[#45a049] text-center text-white relative overflow-hidden">
           <motion.h2
             variants={fadeUp}
             initial="hidden"

@@ -46,7 +46,7 @@ const LearnMore = () => {
           </Link>
           <Link
             to="/users/register"
-            className="px-6 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#43a047] transition"
+            className="px-6 py-2 bg-[#5F9D08] text-white rounded-lg hover:bg-[#43a047] transition"
           >
             Get Started
           </Link>
