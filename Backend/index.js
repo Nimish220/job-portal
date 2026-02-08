@@ -27,6 +27,11 @@ app.set("trust proxy", 1);
 app.use(
   cors({
     origin: (origin, callback) => {
+      const allowedOrigins = [
+    "http://localhost:5173", 
+    "https://job-portal-frontend-two-kappa.vercel.app",
+    "job-portal-frontend-dj473vbub-nimishs-projects-2486b21c.vercel.app"
+  ];
       // 1. Allow requests with no origin (like mobile apps)
       // 2. Allow localhost for your local development
       // 3. Allow ANY subdomain ending in .vercel.app
