@@ -159,10 +159,10 @@ console.log("isFile?", formData.panCardOrGstFile instanceof File);
              )}
  
              <Link
-               to="/recruiters/register"
+               to="/users/register"
                className="bg-[#5F9D08] text-white px-5 py-2 rounded-md font-semibold hover:bg-[#45a049] transition shadow-md"
              >
-               Post a Job
+               Join as Seeker
              </Link>
            </div>
  
@@ -234,11 +234,11 @@ console.log("isFile?", formData.panCardOrGstFile instanceof File);
  
                <li>
                  <Link
-                   to="/recruiters/register"
+                   to="/users/register"
                    onClick={() => setIsMenuOpen(false)}
                    className="bg-[#5F9D08] text-white px-4 py-2 rounded-md shadow hover:bg-[#45a049] transition"
                  >
-                   Post a Job
+                   Join as Seeker
                  </Link>
                </li>
              </ul>
