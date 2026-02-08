@@ -6,13 +6,16 @@ import { User } from "../models/User.js";
 export const protect = async (req, res, next) => {
   let token;
 
-  // 1. Check for token in Cookies OR Authorization Header
-  if (req.cookies && req.cookies.token) {
+  // 1. Check Authorization Header FIRST (This is where your Interceptor puts it)
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    token = req.headers.authorization.split(" ")[1];
+  } 
+  // 2. Check Cookies as a backup
+  else if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
-  } else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-    token = req.headers.authorization.split(" ")[1]; // Get token from "Bearer <token>"
   }
 
+  // If still no token, it fails
   if (!token) {
     return res.status(401).json({ success: false, message: "No session found" });
   }
@@ -45,13 +48,19 @@ export const protect = async (req, res, next) => {
 export const silentCheck = async (req, res) => {
   try {
     let token;
-    if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
-    } else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-      token = req.headers.authorization.split(" ")[1];
-    }
+    // 1. Check Authorization Header FIRST (This is where your Interceptor puts it)
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    token = req.headers.authorization.split(" ")[1];
+  } 
+  // 2. Check Cookies as a backup
+  else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
 
-    if (!token) return res.status(200).json({ authenticated: false, role: null });
+  // If still no token, it fails
+  if (!token) {
+    return res.status(401).json({ success: false, message: "No session found" });
+  }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
