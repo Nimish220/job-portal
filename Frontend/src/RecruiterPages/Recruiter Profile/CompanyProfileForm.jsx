@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import axios from "axios";
+import { axiosInstance } from "../../utils/axiosInstance";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const CompanyProfileForm = () => {
@@ -18,10 +18,7 @@ const CompanyProfileForm = () => {
 
     (async () => {
       try {
-        const res = await axios.get(
-          backend_url+"/api/recruiters/getProfile",
-          { withCredentials: true }
-        );
+        const res = await axiosInstance.get("recruiters/getProfile");
         setCompany(res.data.recruiter || null);
       } catch {
         setCompany(null);

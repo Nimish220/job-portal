@@ -7,7 +7,7 @@ import { FiMenu } from "react-icons/fi";
 import Sidebar from "../../components/SideBar_Recr";
 import Notifications from "../../assets/images/notifications00.png";
 import { toast } from "react-toastify";
-import axios from "axios";
+import { axiosInstance } from "../../utils/axiosInstance";
 import { FaHome } from "react-icons/fa";
 import { FaKey, FaUserEdit, FaSignOutAlt } from "react-icons/fa";
 
@@ -41,11 +41,7 @@ const RecruiterProfile = () => {
   // Fetch recruiter profile
   const fetchProfile = async () => {
   try {
-    const res = await axios.get(
-      `${backend_url}/api/recruiters/getProfile`,
-      { withCredentials: true }
-    );
-
+    const res = await axiosInstance.get('recruiters/getProfile');
     const recruiter = res.data.recruiter;
 
     setUserName(recruiter.name || "");
@@ -67,7 +63,7 @@ const RecruiterProfile = () => {
   }
 };
 
-// ✅ Call fetchProfile once when component mounts
+//  Call fetchProfile once when component mounts
 useEffect(() => {
   fetchProfile();
 }, []);

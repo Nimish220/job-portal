@@ -8,7 +8,7 @@ import useRecruiterStore from "../store/recruiterStore";
 import { FaHome,FaBell } from "react-icons/fa";
 import AmazonLogo from '../assets/images/AmazonLogo.png';
 import ProfileImage from '../assets/images/Profile_pics/1.jpg';
-import axios from "axios";
+import { axiosInstance } from "../utils/axiosInstance";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 function PostJob_Job() {
@@ -66,9 +66,7 @@ function PostJob_Job() {
   useEffect(()=>{
     const fetchProfile = async () => {
         try {
-          const res = await axios.get(backend_url+'/api/recruiters/getProfile', {
-            withCredentials: true
-          });
+          const res = await axiosInstance.get('recruiters/getProfile');
           setUserName(res.data.recruiter.companyName);
         } catch (error) {
           console.error("Error fetching profile:", error);

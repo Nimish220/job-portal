@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Sidebar from "../components/SideBar_Recr";
-import axios from "axios";
+import { axiosInstance } from "../utils/axiosInstance";
 import { toast } from "react-toastify";
 import { AnimatePresence, motion } from "framer-motion";
 import { FiMenu, FiCheckCircle, FiXCircle, FiTrash2, FiCheckSquare, FiRefreshCw} from "react-icons/fi";
@@ -23,9 +23,7 @@ export default function NotificationsRecr() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`${backend_url}/api/recruiters/getProfile`, {
-          withCredentials: true,
-        });
+        const res = await axiosInstance.get('recruiters/getProfile');
         setUserName(res.data.recruiter.companyName);
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -38,9 +36,7 @@ export default function NotificationsRecr() {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${backend_url}/api/recruiters/notifications`, {
-        withCredentials: true,
-      });
+      const res = await axiosInstance.get('recruiters/notifications');
       setNotifications(res.data.notifications || []);
     } catch (error) {
       toast.error("Failed to load notifications");
@@ -53,7 +49,7 @@ export default function NotificationsRecr() {
   //  Mark single notification as read
   const markAsRead = async (id) => {
     try {
-      await axios.patch(`${backend_url}/api/recruiters/notifications/${id}/read`, {}, { withCredentials: true });
+      await axiosInstance.patch(`recruiters/notifications/${id}/read`);
       setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
     } catch {
       toast.error("Failed to mark as read");
@@ -63,9 +59,7 @@ export default function NotificationsRecr() {
   //  Delete single notification
   const deleteNotification = async (id) => {
     try {
-      await axios.delete(`${backend_url}/api/recruiters/notifications/${id}`, {
-        withCredentials: true,
-      });
+      await axiosInstance.delete(`recruiters/notifications/${id}`);
       setNotifications((prev) => prev.filter((n) => n._id !== id));
     } catch {
       toast.error("Failed to delete notification");
@@ -79,7 +73,7 @@ export default function NotificationsRecr() {
         notifications
           .filter((n) => !n.isRead)
           .map((n) =>
-            axios.patch(`${backend_url}/api/recruiters/notifications/${n._id}/read`, {}, { withCredentials: true })
+            axiosInstance.patch(`recruiters/notifications/${n._id}/read`)
           )
       );
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
@@ -94,7 +88,7 @@ export default function NotificationsRecr() {
     try {
       await Promise.all(
         notifications.map((n) =>
-          axios.delete(`${backend_url}/api/recruiters/notifications/${n._id}`, { withCredentials: true })
+          axiosInstance.delete(`recruiters/notifications/${n._id}`)
         )
       );
       setNotifications([]);

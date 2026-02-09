@@ -34,7 +34,7 @@
         res.cookie("token", token, {
         httpOnly: true,
         secure: true,      // Required for Vercel's HTTPS
-        sameSite: "none",  // Required for cross-domain cookies
+        sameSite: "None",  // Required for cross-domain cookies
         maxAge: 1 * 60 * 60 * 1000, 
       });
 

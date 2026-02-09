@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { axiosInstance } from "../utils/axiosInstance";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,10 +38,7 @@ const UpdateRecruiter = () => {
   useEffect(() => {
     const fetchRecruiter = async () => {
       try {
-        const res = await axios.get(
-          `${backend_url}/api/recruiters/getProfile`,
-          { withCredentials: true }
-        );
+        const res = await axiosInstance.get("recruiters/getProfile");
         const recruiter = res.data.recruiter;
         setFormData({
           email: recruiter.email || "",
@@ -84,15 +81,9 @@ const UpdateRecruiter = () => {
       data.append("companyName", formData.companyName);
       if (file) data.append("companyPanCardOrGstFile", file);
 
-      const res = await axios.post(
-        `${backend_url}/api/recruiters/update`,
-        data,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-
+      const res = await axiosInstance.post("recruiters/update", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
           if (res.data.success) {
         // 1. Show the popup on the current screen (Update Profile page)
         toast.success("Recruiter updated successfully!");
