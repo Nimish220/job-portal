@@ -53,8 +53,8 @@ function Applicants() {
       //  FIXED: Removed "/candidate/${applicantId}" from the end. 
       // This page is for the LIST of applicants, so we only need the jobId.
       const apiPath = isInternship 
-        ? `/api/applications/internship/${jobId}` 
-        : `/api/applications/job/${jobId}`;
+        ? `api/applications/internship/${jobId}` 
+        : `api/applications/job/${jobId}`;
 
       const res = await axiosInstance.get(apiPath);
       
