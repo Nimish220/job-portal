@@ -8,7 +8,7 @@ import Sidebar from '../components/SideBar_Recr';
 import AmazonLogo from '../assets/images/AmazonLogo.png';
 import { FaHome,FaBell } from 'react-icons/fa';
 import ProfileImage from '../assets/images/Profile_pics/1.jpg';
-import axios from 'axios';
+import { axiosInstance } from '../utils/axiosInstance';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 function PostJob_Internship() {

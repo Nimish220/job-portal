@@ -133,13 +133,14 @@ function AllJobs_ClosedJobs() {
   //  Normalize function for JobCard
   const normalize = (item, type) => ({
     jobTitle: item.jobRole || item.internshipRole,
+    applicantCount: item.candidates?.length || item.applicants?.length || 0,
     location: item.location,
     salaryRange: type === "job" ? item.ctc : `${item.stipendType || ""} ${item.stipendAmount || ""}`,
     description: item.jobDescription || item.internshipDescription || "Not provided",
     skills: item.skillsRequired,
     qualifications: item.eligibilityCriteria || "Not provided",
     status: item.status,
-    opened: item.createdAt,
+    opened: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString(),
     actionButtonText: type === "job" ? "Open Job" : "Open Internship",
     secondaryButtonText: type === "job" ? "Delete Job" : "Delete Internship",
     actionButtonLink: () => (type === "job" ? handleOpenJob(item._id) : handleOpenInternship(item._id)),

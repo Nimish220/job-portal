@@ -57,7 +57,7 @@ const ApplicantsProfile = () => {
     }
   };
 
-  // ✅ SINGLE DYNAMIC USEEFFECT FOR FETCHING APPLICANT DATA
+  //  SINGLE DYNAMIC USEEFFECT FOR FETCHING APPLICANT DATA
   useEffect(() => {
     fetchProfile();
     const fetchApplicantData = async () => {

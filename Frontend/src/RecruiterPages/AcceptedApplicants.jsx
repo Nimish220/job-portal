@@ -5,6 +5,7 @@ import photo2 from '../assets/images/Profile_pics/2.jpg';
 import photo3 from '../assets/images/Profile_pics/3.jpg';
 import Sidebar from '../components/SideBar_Recr';
 import Navbar from './Notifications/Navbar';
+import { axiosInstance } from '../utils/axiosInstance';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FiMenu } from 'react-icons/fi';
 
@@ -36,12 +37,31 @@ const cardVariants = {
 export default function AcceptedApplicants() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const [acceptedApplicants, setAcceptedApplicants] = useState([]);
+  const [loading, setLoading] = useState(true);
   const isMobile = screenWidth < 768;
 
   useEffect(() => {
     const handleResize = () => setScreenWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const fetchAccepted = async () => {
+      try {
+        setLoading(true);
+        // Adjust this endpoint string to match your actual backend route for accepted candidates
+        const res = await axiosInstance.get('recruiters/accepted-applicants');
+        setAcceptedApplicants(res.data.applicants || []);
+      } catch (error) {
+        console.error("Error fetching accepted applicants:", error);
+        toast.error("Failed to load accepted applicants");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAccepted();
   }, []);
 
   return (

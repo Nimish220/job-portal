@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaHome, FaBell } from "react-icons/fa";
 import AmazonLogo from '../assets/images/AmazonLogo.png';
 import ProfileImage from '../assets/images/Profile_pics/1.jpg';
-import axios from "axios";
+import { axiosInstance } from "../utils/axiosInstance";
 import { toast, ToastContainer } from 'react-toastify';
 
 function EditJob() {
@@ -70,7 +70,7 @@ function EditJob() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const jobRes = await axios.get(`${backend_url}/api/recruiters/jobs/${id}`, { withCredentials: true });
+                const jobRes = await axiosInstance.get(`recruiters/jobs/${id}`);
                 const data = jobRes.data;
                 setJobRole(data.jobRole || "");
                 setExperience(data.experience || "");
@@ -125,10 +125,9 @@ function EditJob() {
     }
 
     try {
-        await axios.put(`${backend_url}/api/recruiters/updateJob/${id}`, formData, { 
-            withCredentials: true,
-            headers: { "Content-Type": "multipart/form-data" } // REQUIRED for files
-        });
+        await axiosInstance.put(`recruiters/updateJob/${id}`, formData, { 
+                headers: { "Content-Type": "multipart/form-data" }
+            });
         toast.update(loadingToast, { render: "Updated successfully!", type: "success", isLoading: false, autoClose: 3000 });
         setTimeout(() => navigate("/recruiters/jobs/active"), 1500);
     } catch (error) {

@@ -260,7 +260,7 @@ export const applyToJobs = async (req, res) => {
         sender: user._id,
         senderModel: "User",
         type: "job_applied",
-        message: `${user.name} applied for your job: ${job.title}`,
+        message: `${user.name} applied for your job: ${job.jobRole || job.title}`,
         job: job._id,
       });
     }

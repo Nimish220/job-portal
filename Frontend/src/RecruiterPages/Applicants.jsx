@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMenu } from 'react-icons/fi';
-import axios from 'axios';
+import { axiosInstance } from '../utils/axiosInstance';
 import Notifications from '../assets/images/notifications00.png';
 import ProfileImage from '../assets/images/Profile_pics/1.jpg';
 import Sidebar from '../components/SideBar_Recr';
@@ -38,7 +38,7 @@ function Applicants() {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(`${backend_url}/api/recruiters/getProfile`, { withCredentials: true });
+     const res = await axiosInstance.get('recruiters/getProfile');
       setUserName(res.data.recruiter?.companyName || 'Guest');
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -50,13 +50,13 @@ function Applicants() {
     try {
       const isInternship = location.pathname.includes('internshipApplicants');
       
-      // ✅ FIXED: Removed "/candidate/${applicantId}" from the end. 
+      //  FIXED: Removed "/candidate/${applicantId}" from the end. 
       // This page is for the LIST of applicants, so we only need the jobId.
       const apiPath = isInternship 
         ? `/api/applications/internship/${jobId}` 
         : `/api/applications/job/${jobId}`;
 
-      const res = await axios.get(`${backend_url}${apiPath}`, { withCredentials: true });
+      const res = await axiosInstance.get(apiPath);
       
       // Ensure we set an array
       setApplicants(res.data || []); 

@@ -6,7 +6,7 @@ import Sidebar from '../components/SideBar_Recr';
 import AmazonLogo from '../assets/images/AmazonLogo.png';
 import { FaHome, FaBell } from 'react-icons/fa';
 import ProfileImage from '../assets/images/Profile_pics/1.jpg';
-import axios from 'axios';
+import { axiosInstance } from "../utils/axiosInstance";
 import { toast, ToastContainer } from 'react-toastify';
 
 function EditInternship() {
@@ -57,7 +57,7 @@ function EditInternship() {
         const fetchInternshipDetails = async () => {
             try {
                 // Adjust this endpoint based on your backend route
-                const res = await axios.get(`${backend_url}/api/recruiters/myInternships`, { withCredentials: true });
+                const res = await axiosInstance.get('recruiters/myInternships');
                 const currentInternship = res.data.internships.find(i => i._id === id);
                 
                 if (currentInternship) {
@@ -93,7 +93,7 @@ function EditInternship() {
         };
         const fetchProfile = async () => {
             try {
-                const res = await axios.get(`${backend_url}/api/recruiters/getProfile`, { withCredentials: true });
+                const res = await axiosInstance.get('recruiters/getProfile');
                 setUserName(res.data.recruiter.companyName);
             } catch (error) { console.error(error); }
         };
@@ -158,10 +158,8 @@ function EditInternship() {
 
         try {
             // Updated to PUT and specific ID route
-            const response = await fetch(`${backend_url}/api/recruiters/updateInternship/${id}`, {
-                method: "PUT", // Use PUT for updates
-                body: formData,
-                credentials: "include",
+           const response = await axiosInstance.put(`recruiters/updateInternship/${id}`, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
             });
             if (response.status === 401 || response.status === 403) {
                 toast.error("Session expired. Please login.");
