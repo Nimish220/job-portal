@@ -242,14 +242,14 @@ export const updateRecruiterProfile = async (req, res) => {
     const jobId = req.params.id;
     const job = await Job.findById(jobId).populate({
       path: 'candidates',
-      select: 'name degree photo email', // select the fields you need
+      select: 'name degree photo email university city resume github about skills'
     })
 
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
     }
 
-    res.status(200).json({ candidates: job.candidates });
+    res.status(200).json(job.candidates || []);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
+import { axiosInstance } from "../utils/axiosInstance";
 import { toast, ToastContainer } from "react-toastify";
 import {
   FaGraduationCap,
@@ -37,10 +37,10 @@ const ApplicantsProfile = () => {
 
   // Helper to determine if we are looking at an Internship or Job context for STATUS updates
   const getStatusUpdateUrl = () => {
-    const isInternship = location.pathname.includes('internshipApplicants');
-    const type = isInternship ? 'internship' : 'job';
-    return `${backend_url}/api/applications/${type}/${jobId}/candidate/${applicantId}/status`;
-  };
+  const isInternship = location.pathname.includes('internshipApplicants');
+  const type = isInternship ? 'internship' : 'job';
+  return `applications/${type}/${jobId}/candidate/${applicantId}/status`;
+};
 
   useEffect(() => {
     const handleResize = () => setScreenWidth(window.innerWidth);
@@ -50,7 +50,7 @@ const ApplicantsProfile = () => {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(`${backend_url}/api/recruiters/getProfile`, { withCredentials: true });
+      const res = await axiosInstance.get('recruiters/getProfile');
       setUserName(res.data.recruiter?.companyName || 'Guest');
     } catch (error) {
       console.error('Error fetching recruiter profile:', error);
@@ -68,10 +68,7 @@ const ApplicantsProfile = () => {
         const apiType = isInternship ? 'internships' : 'jobs';
         
         // 2. Fetch using dynamic path
-        const res = await axios.get(
-          `${backend_url}/api/recruiters/${apiType}/${jobId}/candidate/${applicantId}`,
-          { withCredentials: true }
-        );
+        const res = await axiosInstance.get(`recruiters/${apiType}/${jobId}/candidate/${applicantId}`);
         setProfile(res.data);
         setError(null);
       } catch (err) {
@@ -88,49 +85,44 @@ const ApplicantsProfile = () => {
   // ApplicantsProfile.jsx -> handleNotify function update
 const handleNotify = async () => {
     try {
-      // 1. Update the Application Status (Existing logic)
-      await axios.put(
-        getStatusUpdateUrl(),
-        {
+      // 1. Update Status using Instance
+      const isInternship = location.pathname.includes('internshipApplicants');
+      const type = isInternship ? 'internship' : 'job';
+      await axiosInstance.put(`applications/${type}/${jobId}/candidate/${applicantId}/status`, {
           status: "Accepted",
           message: roundDetails || "You have been shortlisted for the next round.",
-        },
-        { withCredentials: true }
-      );
+      });
 
-      // 2. Create the Notification for the Seeker
-      // ensure you are sending 'applicantId' and 'jobId' exactly as the controller expects
-      await axios.post(`${backend_url}/api/recruiters/notify-candidate`, {
-        applicantId: applicantId, // from useParams
-        jobId: jobId,             // from useParams
-        message: roundDetails || `Congratulations! You have been shortlisted for the next round by ${userName}.`
-      }, { withCredentials: true });
+      // 2. Notify Candidate using Instance
+      await axiosInstance.post(`recruiters/notify-candidate`, {
+        applicantId: applicantId,
+        jobId: jobId,
+        message: roundDetails || `Congratulations! You have been shortlisted by ${userName}.`
+      });
 
       setProfile((prev) => ({ ...prev, status: "Accepted" }));
-      toast.success("Applicant notified and status updated!");
+      toast.success("Applicant notified!");
     } catch (err) {
-      console.error("Error notifying applicant:", err);
-      toast.error(err.response?.data?.message || "Failed to notify applicant");
+      toast.error(err.response?.data?.message || "Action failed");
     }
 };
 
   const handleReject = async () => {
-    try {
-      await axios.put(
-        getStatusUpdateUrl(),
-        {
-          status: "Rejected",
-          message: "We regret to inform you that your application was not selected.",
-        },
-        { withCredentials: true }
-      );
-      setProfile((prev) => ({ ...prev, status: "Rejected" }));
-      toast.success("Applicant rejected successfully!");
-    } catch (err) {
-      console.error("Error rejecting applicant:", err);
-      toast.error(err.response?.data?.message || "Failed to reject applicant");
-    }
-  };
+  try {
+    const isInternship = location.pathname.includes('internshipApplicants');
+    const type = isInternship ? 'internship' : 'job';
+
+    await axiosInstance.put(`applications/${type}/${jobId}/candidate/${applicantId}/status`, {
+      status: "Rejected",
+      message: "We regret to inform you that your application was not selected.",
+    });
+
+    setProfile((prev) => ({ ...prev, status: "Rejected" }));
+    toast.success("Applicant rejected successfully!");
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed to reject applicant");
+  }
+};
 
   if (loading) return <div className="p-8 text-center">Loading applicant details...</div>;
   if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
@@ -153,7 +145,7 @@ const handleNotify = async () => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-gray-100 min-h-screen flex flex-col">
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer position="top-center" autoClose={3000} />
       
       <motion.div className="bg-[#5F9D08] sticky top-0 left-0 text-white p-4 flex justify-between items-center w-full shadow-md z-50">
         <div className="font-bold text-xl">Portal Logo</div>

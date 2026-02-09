@@ -59,8 +59,9 @@ function Applicants() {
       const res = await axiosInstance.get(apiPath);
       
       // Ensure we set an array
-      setApplicants(res.data || []); 
-      setLoading(false);
+     const dataArray = res.data.candidates || res.data || [];
+     setApplicants(dataArray); 
+     setLoading(false);
     } catch (err) {
       const errorMsg = err.response?.data?.message || err.message;
       console.error("Error fetching applicants:", errorMsg); 
@@ -176,12 +177,39 @@ function Applicants() {
                           View Profile
                         </motion.button>
                       </Link>
-                      <motion.button
-                        className="border border-gray-300 text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Resume
-                      </motion.button>
+                     <motion.button
+  className="border border-gray-300 text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+  whileTap={{ scale: 0.95 }}
+  onClick={async () => {
+  let resumeUrl = applicant.resume?.[applicant.resume?.length - 1]?.fileUrl;
+
+  if (!resumeUrl) {
+    // Show a small loading message so the recruiter knows it's working
+    const loadingToast = toast.loading("Fetching latest resume...");
+    try {
+      const isInternship = location.pathname.includes('internship');
+      const apiType = isInternship ? 'internships' : 'jobs';
+      const res = await axiosInstance.get(`recruiters/${apiType}/${jobId}/candidate/${applicant._id}`);
+      
+      const freshResume = res.data.resume?.[res.data.resume?.length - 1];
+      resumeUrl = freshResume?.fileUrl;
+      
+      toast.dismiss(loadingToast);
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      console.error("Fetch failed:", err);
+    }
+  }
+
+  if (resumeUrl) {
+    window.open(resumeUrl, '_blank', 'noopener,noreferrer');
+  } else {
+    toast.error("Resume not found.");
+  }
+}}
+>
+  Resume
+</motion.button>
                     </div>
                   </motion.div>
                 ))
