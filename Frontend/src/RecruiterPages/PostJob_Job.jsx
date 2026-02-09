@@ -310,7 +310,7 @@ function PostJob_Job() {
               animate="visible"
             >
               <motion.div variants={formFieldVariants}>
-                <label className="block text-gray-700 font-bold">Job Role</label>
+                <label className="block text-gray-700 font-bold">Job Role <span className="text-red-500">*</span></label>
                 <motion.input
                   type="text"
                   value={jobRole}
@@ -342,7 +342,7 @@ function PostJob_Job() {
               </motion.div>
 
               <motion.div variants={formFieldVariants}>
-                <label className="block text-gray-700 font-bold">CTC (in LPA)</label>
+                <label className="block text-gray-700 font-bold">CTC (in LPA) <span className="text-red-500">*</span></label>
                 <motion.input
                   type="number"
                   min="0.1"
@@ -375,7 +375,7 @@ function PostJob_Job() {
               </motion.div>
 
               <motion.div variants={formFieldVariants}>
-                <label className="block text-gray-700 font-bold">Qualifications</label>
+                <label className="block text-gray-700 font-bold">Qualifications <span className="text-red-500">*</span></label>
                 <motion.input
                   type="text"
                   value={qualifications}
@@ -387,7 +387,7 @@ function PostJob_Job() {
               </motion.div>
 
               <motion.div variants={formFieldVariants}>
-                <label className="block text-gray-700 font-bold">Eligibility Criteria</label>
+                <label className="block text-gray-700 font-bold">Eligibility Criteria <span className="text-red-500">*</span></label>
                 <motion.textarea
                   value={eligibilityCriteria}
                   onChange={(e) => setEligibilityCriteria(e.target.value)}
@@ -398,7 +398,7 @@ function PostJob_Job() {
               </motion.div>
 
               <motion.div variants={formFieldVariants}>
-                <label className="block text-gray-700 font-bold">Required Documents</label>
+                <label className="block text-gray-700 font-bold">Required Documents <span className="text-red-500">*</span></label>
                 <motion.input
                   type="text"
                   value={requiredDocuments}
@@ -410,7 +410,7 @@ function PostJob_Job() {
               </motion.div>
 
               <motion.div variants={formFieldVariants}>
-                <label className="block text-gray-700 font-bold">Job Type</label>
+                <label className="block text-gray-700 font-bold">Job Type <span className="text-red-500">*</span></label>
                 <motion.div className="flex gap-4 mt-2">
                   {["Full-Time", "Part-Time"].map((type) => (
                     <label key={type} className="flex items-center space-x-2">
@@ -421,6 +421,7 @@ function PostJob_Job() {
                         checked={selectedJobType === type}
                         onChange={() => setSelectedJobType(type)}
                         className="accent-[#5F9D08]"
+                        required
                       />
                       <span>{type}</span>
                     </label>
@@ -429,7 +430,7 @@ function PostJob_Job() {
               </motion.div>
 
               <motion.div variants={formFieldVariants}>
-                <label className="block text-gray-700 font-bold">Location</label>
+                <label className="block text-gray-700 font-bold">Location <span className="text-red-500">*</span></label>
                 <motion.input
                   type="text"
                   value={location}
@@ -464,7 +465,7 @@ function PostJob_Job() {
               </motion.div>
 
               <motion.div variants={formFieldVariants}>
-                <label className="block text-gray-700 font-bold">Job Description</label>
+                <label className="block text-gray-700 font-bold">Job Description <span className="text-red-500">*</span></label>
                 <motion.textarea
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}

@@ -53,8 +53,8 @@ function Applicants() {
       //  FIXED: Removed "/candidate/${applicantId}" from the end. 
       // This page is for the LIST of applicants, so we only need the jobId.
       const apiPath = isInternship 
-        ? `api/applications/internship/${jobId}` 
-        : `api/applications/job/${jobId}`;
+        ? `applications/internship/${jobId}` 
+        : `applications/job/${jobId}`;
 
       const res = await axiosInstance.get(apiPath);
       
@@ -165,7 +165,7 @@ function Applicants() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {/* ✅ LINK FIX: Now correctly chooses path based on context */}
+                      {/*  LINK FIX: Now correctly chooses path based on context */}
                       <Link to={location.pathname.includes('internship') 
                           ? `/recruiters/internshipApplicants/${jobId}/${applicant._id}` 
                           : `/recruiters/applicantsProfile/${jobId}/${applicant._id}`}>

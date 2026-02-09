@@ -351,7 +351,7 @@ const handleStipendChange = (type) => {
               {/* Example for Internship Role */}
               
               <motion.div variants={formFieldVariants}>
-            <label className="block text-gray-700 font-bold">Internship Role</label>
+            <label className="block text-gray-700 font-bold">Internship Role <span className="text-red-500">*</span></label>
             <motion.input
               type="text"
               value={internshipRole}
@@ -365,7 +365,7 @@ const handleStipendChange = (type) => {
 
           {/* --- STIPEND SECTION --- */}
           <motion.div variants={formFieldVariants} className="space-y-2">
-            <label className="block text-gray-700 font-bold">Stipend</label>
+            <label className="block text-gray-700 font-bold">Stipend <span className="text-red-500">*</span></label>
             
             {/* Radio Buttons */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mb-2">
@@ -470,7 +470,7 @@ const handleStipendChange = (type) => {
           </motion.div>
 
           <motion.div variants={formFieldVariants}>
-              <label className="block text-gray-700 font-bold">Internship Duration (Months)</label>
+              <label className="block text-gray-700 font-bold">Internship Duration (Months) <span className="text-red-500">*</span></label>
               
               <div className="flex items-center border border-gray-300 rounded p-2 focus-within:ring-2 focus-within:ring-[#5F9D08] bg-white">
                   <input
@@ -489,13 +489,14 @@ const handleStipendChange = (type) => {
 
           {/* Location */}
           <motion.div variants={formFieldVariants}>
-            <label className="block text-gray-700 font-bold">Location</label>
+            <label className="block text-gray-700 font-bold">Location <span className="text-red-500">*</span></label>
             <motion.input
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="e.g., Remote, Pune"
               className="w-full p-2 border border-gray-300 rounded"
+              required
               whileFocus={{ borderColor: '#5F9D08', boxShadow: '0 0 0 2px rgba(95, 157, 8, 0.2)' }}
             />
           </motion.div>
@@ -537,7 +538,7 @@ const handleStipendChange = (type) => {
           </motion.div>
 
           <motion.div variants={formFieldVariants}>
-          <label className="block text-gray-700 font-bold">Internship Description</label>
+          <label className="block text-gray-700 font-bold">Internship Description <span className="text-red-500">*</span></label>
           <motion.textarea
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}

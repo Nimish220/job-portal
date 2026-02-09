@@ -161,19 +161,22 @@ function EditInternship() {
            const response = await axiosInstance.put(`recruiters/updateInternship/${id}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
-            if (response.status === 401 || response.status === 403) {
-                toast.error("Session expired. Please login.");
-                navigate("/recruiters/login");
-                return;
-            }
-            if (response.ok) {
-                toast.update(loadingToast, { render: "Internship updated successfully!", type: "success", isLoading: false, autoClose: 3000 });
-                setTimeout(() => navigate("/recruiters/jobs/active"), 2000);
-            } else {
-                toast.update(loadingToast, { render: "Update failed", type: "error", isLoading: false, autoClose: 3000 });
-            }
+            toast.update(loadingToast, { 
+                render: "Internship updated successfully!", 
+                type: "success", 
+                isLoading: false, 
+                autoClose: 3000 
+            });    
+            setTimeout(() => navigate("/recruiters/jobs/active"), 2000);
         } catch (error) {
-            toast.update(loadingToast, { render: "Something went wrong", type: "error", isLoading: false, autoClose: 3000 });
+            const errorMsg = error.response?.data?.message || "Update failed";
+            
+            if (error.response?.status === 401 || error.response?.status === 403) {
+                toast.update(loadingToast, { render: "Session expired. Please login.", type: "error", isLoading: false, autoClose: 3000 });
+                navigate("/recruiters/login");
+            } else {
+                toast.update(loadingToast, { render: errorMsg, type: "error", isLoading: false, autoClose: 3000 });
+            }
         }
     };
 
@@ -223,12 +226,12 @@ function EditInternship() {
 
                         <motion.form className="space-y-5" onSubmit={handleSubmit} variants={staggerContainer} initial="hidden" animate="visible">
                             <motion.div variants={formFieldVariants}>
-                                <label className="block text-gray-700 font-bold">Internship Role</label>
+                                <label className="block text-gray-700 font-bold">Internship Role <span className="text-red-500">*</span></label>
                                 <input type="text" value={internshipRole} onChange={(e) => setInternshipRole(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" required />
                             </motion.div>
 
                             <motion.div variants={formFieldVariants}>
-                                <label className="block text-gray-700 font-bold">Stipend</label>
+                                <label className="block text-gray-700 font-bold">Stipend <span className="text-red-500">*</span></label>
                                 <div className="flex flex-wrap gap-4 mb-3">
                                     {["Fixed", "Performance Based", "Unpaid"].map((type) => (
                                     <label key={type} className="flex items-center cursor-pointer">
@@ -277,7 +280,7 @@ function EditInternship() {
                             </motion.div>
 
                             <motion.div variants={formFieldVariants}>
-                                <label className="block text-gray-700 font-bold">Internship Type</label>
+                                <label className="block text-gray-700 font-bold">Internship Type <span className="text-red-500">*</span></label>
                                 <div className="flex gap-4">
                                     {["Full-Time", "Part-Time"].map((type) => (
                                         <label key={type} className="flex items-center">
@@ -338,7 +341,7 @@ function EditInternship() {
                                     )}
                             </motion.div>
                             <motion.div variants={formFieldVariants}>
-                                <label className="block text-gray-700 font-bold">Internship Description</label>
+                                <label className="block text-gray-700 font-bold">Internship Description <span className="text-red-500">*</span></label>
                                 <textarea value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} className="w-full p-2 border border-gray-300 rounded h-32" required />
                             </motion.div>
 

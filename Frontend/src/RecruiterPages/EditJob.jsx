@@ -72,6 +72,7 @@ function EditJob() {
             try {
                 const jobRes = await axiosInstance.get(`recruiters/jobs/${id}`);
                 const data = jobRes.data;
+                
                 setJobRole(data.jobRole || "");
                 setExperience(data.experience || "");
                 setCtc(data.ctc || "");
@@ -83,7 +84,8 @@ function EditJob() {
                 setRequiredDocuments(data.requiredDocuments || "");
                 setSelectedJobType(data.jobType || "Full-Time");
                 setJobDescriptionDocument(data.jobDescriptionDocument || "");
-                const profileRes = await axios.get(`${backend_url}/api/recruiters/getProfile`, { withCredentials: true });
+                
+                const profileRes = await axiosInstance.get('recruiters/getProfile');
                 setUserName(profileRes.data.recruiter.companyName);
             } catch (error) {
                 toast.error("Failed to load details");
@@ -161,52 +163,52 @@ function EditJob() {
 
                         <motion.form className="space-y-5" onSubmit={handleSubmit} variants={staggerContainer} initial="hidden" animate="visible">
                             <motion.div variants={formFieldVariants}>
-                                <label className="block text-gray-700 font-bold">Job Role</label>
+                                <label className="block text-gray-700 font-bold">Job Role <span className="text-red-500">*</span></label>
                                 <input type="text" value={jobRole} onChange={(e) => setJobRole(e.target.value)} className="w-full p-2 border rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" required />
                             </motion.div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    {/* Experience Field */}
-    <motion.div variants={formFieldVariants}>
-        <label className="block text-gray-700 font-bold mb-1">Experience (Years)</label>
-        <input 
-            type="number" 
-            min="0" 
-            step="1"
-            value={experience} 
-            onWheel={(e) => e.target.blur()} // FIX: Stop scroll jumping
-            onChange={(e) => {
-                const val = e.target.value;
-                // FIX: Block minus sign and negative zero
-                if (val === "" || (Number(val) >= 0 && !val.includes('-'))) {
-                    setExperience(val);
-                }
-            }} 
-            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none transition-all" 
-        />
-    </motion.div>
+                                {/* Experience Field */}
+                                <motion.div variants={formFieldVariants}>
+                                    <label className="block text-gray-700 font-bold mb-1">Experience (Years)</label>
+                                    <input 
+                                        type="number" 
+                                        min="0" 
+                                        step="1"
+                                        value={experience} 
+                                        onWheel={(e) => e.target.blur()} // FIX: Stop scroll jumping
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            // FIX: Block minus sign and negative zero
+                                            if (val === "" || (Number(val) >= 0 && !val.includes('-'))) {
+                                                setExperience(val);
+                                            }
+                                        }} 
+                                        className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none transition-all" 
+                                    />
+                                </motion.div>
 
-    {/* CTC Field */}
-    <motion.div variants={formFieldVariants}>
-        <label className="block text-gray-700 font-bold mb-1">CTC (in LPA)</label>
-        <input 
-            type="number" 
-            min="0.1" 
-            step="0.01" 
-            value={ctc} 
-            onWheel={(e) => e.target.blur()} // FIX: Stop scroll jumping
-            onChange={(e) => {
-                const val = e.target.value;
-                // FIX: Strict positive numeric control
-                if (val === "" || (Number(val) >= 0 && !val.includes('-'))) {
-                    setCtc(val);
-                }
-            }} 
-            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none transition-all" 
-            required
-        />
-    </motion.div>
-</div>
+                                {/* CTC Field */}
+                                <motion.div variants={formFieldVariants}>
+                                    <label className="block text-gray-700 font-bold mb-1">CTC (in LPA) <span className="text-red-500">*</span></label>
+                                    <input 
+                                        type="number" 
+                                        min="0.1" 
+                                        step="0.01" 
+                                        value={ctc} 
+                                        onWheel={(e) => e.target.blur()} // FIX: Stop scroll jumping
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            // FIX: Strict positive numeric control
+                                            if (val === "" || (Number(val) >= 0 && !val.includes('-'))) {
+                                                setCtc(val);
+                                            }
+                                        }} 
+                                        className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none transition-all" 
+                                        required
+                                    />
+                                </motion.div>
+                            </div>
                             <motion.div variants={formFieldVariants}>
                                 <label className="block text-gray-700 font-bold">Skills Required</label>
                                 <input type="text" value={skillsRequired} onChange={(e) => setSkillsRequired(e.target.value)} placeholder="e.g., JavaScript, Node.js" className="w-full p-2 border rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" />
@@ -220,6 +222,28 @@ function EditJob() {
                             <motion.div variants={formFieldVariants}>
                                 <label className="block text-gray-700 font-bold">Eligibility Criteria</label>
                                 <textarea value={eligibilityCriteria} onChange={(e) => setEligibilityCriteria(e.target.value)} placeholder="e.g., Minimum CGPA 7.5" className="w-full p-2 border rounded h-20 focus:ring-2 focus:ring-[#5F9D08] outline-none" />
+                            </motion.div>
+
+                            <motion.div variants={formFieldVariants}>
+                                <label className="block text-gray-700 font-bold">Required Documents</label>
+                                <input type="text" value={requiredDocuments} onChange={(e) => setRequiredDocuments(e.target.value)} placeholder="e.g., Resume, Cover Letter" className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" />
+                            </motion.div>
+
+                            <motion.div variants={formFieldVariants}>
+                                <label className="block text-gray-700 font-bold">Job Type <span className="text-red-500">*</span></label>
+                                <div className="flex gap-4">
+                                    {["Full-Time", "Part-Time"].map((type) => (
+                                        <label key={type} className="flex items-center space-x-2 cursor-pointer">
+                                            <input type="radio" name="jobType" checked={selectedJobType === type} onChange={() => setSelectedJobType(type)} className="accent-[#5F9D08]" />
+                                            <span className="text-gray-700">{type}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </motion.div>
+
+                            <motion.div variants={formFieldVariants}>
+                                <label className="block text-gray-700 font-bold">Location <span className="text-red-500">*</span></label>
+                                <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g., Remote, Bangalore" className="w-full p-2 border rounded focus:ring-2 focus:ring-[#5F9D08] outline-none required" />
                             </motion.div>
 
                             <motion.div variants={formFieldVariants}>
@@ -240,33 +264,11 @@ function EditJob() {
                             </motion.div>
 
                             <motion.div variants={formFieldVariants}>
-                                <label className="block text-gray-700 font-bold">Required Documents</label>
-                                <input type="text" value={requiredDocuments} onChange={(e) => setRequiredDocuments(e.target.value)} placeholder="e.g., Resume, Cover Letter" className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" />
-                            </motion.div>
-
-                            <motion.div variants={formFieldVariants}>
-                                <label className="block text-gray-700 font-bold">Job Type</label>
-                                <div className="flex gap-4">
-                                    {["Full-Time", "Part-Time"].map((type) => (
-                                        <label key={type} className="flex items-center space-x-2 cursor-pointer">
-                                            <input type="radio" name="jobType" checked={selectedJobType === type} onChange={() => setSelectedJobType(type)} className="accent-[#5F9D08]" />
-                                            <span className="text-gray-700">{type}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </motion.div>
-
-                            <motion.div variants={formFieldVariants}>
-                                <label className="block text-gray-700 font-bold">Location</label>
-                                <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g., Remote, Bangalore" className="w-full p-2 border rounded focus:ring-2 focus:ring-[#5F9D08] outline-none" />
-                            </motion.div>
-
-                            <motion.div variants={formFieldVariants}>
-                                <label className="block text-gray-700 font-bold">Job Description</label>
+                                <label className="block text-gray-700 font-bold">Job Description <span className="text-red-500">*</span></label>
                                 <textarea value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} placeholder="Brief job description" className="w-full p-2 border rounded h-32 focus:ring-2 focus:ring-[#5F9D08] outline-none resize-none" required />
                             </motion.div>
 
-                                                        <motion.div 
+                            <motion.div 
                                 className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-6" 
                                 variants={formFieldVariants}
                             >
