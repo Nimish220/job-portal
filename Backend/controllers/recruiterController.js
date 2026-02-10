@@ -242,7 +242,7 @@ export const updateRecruiterProfile = async (req, res) => {
     const jobId = req.params.id;
     const job = await Job.findById(jobId).populate({
       path: 'candidates',
-      select: 'name degree photo email university city resume github about skills'
+      select: 'name degree profilePhoto email university city resume github about skills'
     })
 
     if (!job) {

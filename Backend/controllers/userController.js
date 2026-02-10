@@ -148,13 +148,19 @@ export const editProfile = async (req, res) => {
 
     fieldsToUpdate.forEach((field) => {
       if (req.body[field] !== undefined) {
-        user[field] = req.body[field];
+        // Handle skills specifically if they come as a string
+        if (field === "skills" && typeof req.body[field] === "string") {
+            user[field] = req.body[field].split(',').map(s => s.trim()).filter(s => s !== "");
+        } else {
+            user[field] = req.body[field];
+        }
       }
     });
 
-    await user.save();
+    // FIX: Define updatedUser by awaiting the save operation
+    const updatedUser = await user.save();
 
-    res.status(200).json({ success: true, message: "Profile updated", experience: user.experience });
+    res.status(200).json({ success: true, message: "Profile updated", user: updatedUser });
   } catch (error) {
     console.error("Edit Profile Error:", error);
     res.status(500).json({ message: "Server error", error });
@@ -350,10 +356,11 @@ export const getCurrentUser = async (req, res) => {
         about: user.about,
         skills: user.skills,
         experience: user.experience,
+        profilePhoto: user.profilePhoto
       },
     });
   } catch (err) {
-    res.status(500).json({ message: unauthenticated });
+    res.status(500).json({ message: "Unauthenticated user" });
   }
 };
 
@@ -576,4 +583,23 @@ export const resetPassword = async (req, res) => {
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
+};
+
+export const updateProfilePhoto = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "No image provided" });
+
+    // Use our helper - folder 'profile_photos', resource_type 'image'
+    const imageUrl = await uploadToCloudinary(req.file.buffer, "profile_photos", "image");
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { profilePhoto: imageUrl },
+      { new: true }
+    ).select("-password");
+
+    res.status(200).json({ success: true, user, message: "Photo updated!" });
+  } catch (error) {
+    res.status(500).json({ message: "Upload failed", error: error.message });
+  }
 };

@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiEdit, FiMail, FiMapPin, FiGithub, FiBriefcase,
-  FiUser, FiLock, FiLogOut
+  FiUser, FiLock, FiLogOut,FiX
 } from 'react-icons/fi';
-import { FaLinkedin, FaTwitter, FaGlobe } from 'react-icons/fa';
-import { motion } from 'framer-motion';
+import { FaLinkedin, FaTwitter, FaGlobe,FaCheckCircle } from 'react-icons/fa';
+import { AnimatePresence,motion } from 'framer-motion';
 import NavSearchBar from '../components/Header/NavSearchBar';
 import axios from 'axios';
 import useUserStore from '../store/userStore.js';
@@ -28,6 +28,7 @@ const Profile = () => {
   });
 
   const [loading, setLoading] = useState(true);
+  const [showPopup, setShowPopup] = useState(false);
   const [isEditingSkills, setIsEditingSkills] = useState(false);
   const [editedSkills, setEditedSkills] = useState([]);
   const [isEditingAbout, setIsEditingAbout] = useState(false);
@@ -37,6 +38,15 @@ const Profile = () => {
 
   const base = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
   const backend_url = `${base}/api`; 
+
+  useEffect(() => {
+  if (showPopup) {
+    const timer = setTimeout(() => {
+      setShowPopup(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }
+}, [showPopup]);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -107,7 +117,7 @@ const Profile = () => {
         setProfileData(prev => ({ ...prev, ...payload }));
         if (setUser && res.data.user) setUser(res.data.user);
         setEditMode(false);
-        alert("Updated successfully!");
+        setShowPopup(true);
       }
     } catch (err) {
       console.error("Update Error:", err);
@@ -129,6 +139,31 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-green-50 font-sans">
+                {/* --- CENTERED TOAST POPUP --- */}
+          <AnimatePresence>
+            {showPopup && (
+              <div className="fixed top-10 left-0 right-0 z-[999] flex justify-center px-4 pointer-events-none">
+                <motion.div
+                  initial={{ y: -100, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -100, opacity: 0 }}
+                  className="pointer-events-auto flex items-center gap-3 bg-white border-l-8 border-[#5F9D08] px-8 py-4 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] min-w-[320px]"
+                >
+                  {/* Success Icon */}
+                  <div className="bg-green-100 p-2 rounded-full">
+                    <FaCheckCircle className="text-[#5F9D08] text-2xl flex-shrink-0" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-gray-800 font-bold text-lg">Updated successfully!</p>
+                  </div>
+                  {/* Close Button */}
+                  <button onClick={() => setShowPopup(false)} className="text-gray-400 hover:text-gray-600 transition">
+                    <FiX size={20} />
+                  </button>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
       <NavSearchBar toggleSidebar={() => {}} showHamburger={true} />
 
       <motion.div
@@ -189,8 +224,8 @@ const Profile = () => {
                 </div>
 
                 <nav className="mt-6 space-y-2">
-                  <Link to='/users/edit-profile' className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-100 rounded-lg transition">
-                    <FiUser className="mr-2 text-[#5F9D08]" /> Edit Profile
+                  <Link to='/users/edit-profile' className="flex items-center justify-center px-4 py-3 text-sm font-bold text-white bg-[#5F9D08] hover:bg-[#4e7c07] rounded-xl transition shadow-md hover:shadow-lg mt-4">
+                      <FiUser className="mr-2" /> Edit Profile
                   </Link>
                 </nav>
               </div>
