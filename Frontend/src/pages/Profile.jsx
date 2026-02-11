@@ -10,9 +10,10 @@ import { AnimatePresence,motion } from 'framer-motion';
 import NavSearchBar from '../components/Header/NavSearchBar';
 import { axiosInstance } from '../utils/axiosInstance';
 import useUserStore from '../store/userStore.js';
-
+import Sidebar from '../components/SideBar';
 const Profile = () => {
   const { setUser,user } = useUserStore(); 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [profileData, setProfileData] = useState({
     name: '',
     degree: '',
@@ -157,10 +158,24 @@ const Profile = () => {
               </div>
             )}
           </AnimatePresence>
-      <NavSearchBar toggleSidebar={() => {}} showHamburger={true} />
+        <NavSearchBar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} showHamburger={true} />
+        {/* Laptop Sidebar (Hidden on mobile) */}
+      <div className="hidden lg:block fixed top-20 left-0 w-64 h-full z-30">
+        <Sidebar isOpen={true} isMobile={false} />
+      </div>
+      {/* Mobile Sidebar (Controlled by hamburger menu) */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <Sidebar 
+            isOpen={isSidebarOpen} 
+            onClose={() => setIsSidebarOpen(false)} 
+            isMobile={true} 
+          />
+        )}
+      </AnimatePresence>
 
       <motion.div
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-20"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-20 lg:ml-64"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
