@@ -6,7 +6,7 @@ import NavSearchBar from '../components/Header/NavSearchBar';
 import Sidebar from '../components/SideBar';
 import { FiArrowLeft, FiX } from 'react-icons/fi'; 
 import useUserStore from '../store/userStore.js';
-import axios from 'axios';
+import { axiosInstance } from '../utils/axiosInstance';
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -66,10 +66,9 @@ const EditProfile = () => {
 
     setPhotoLoading(true);
     try {
-      const res = await axios.put(`${base}/api/users/update-photo`, formDataUpload, {
-        headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
-      });
+     const res = await axiosInstance.put('users/update-photo', formDataUpload, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
       if (res.data.success) {
         if (setUser) setUser(res.data.user);
         setShowPopup(true); // Trigger Popup instead of alert
@@ -90,7 +89,7 @@ const EditProfile = () => {
     e.preventDefault();
     setLoading(true);
 
-    const apiUrl = `${base}/api/users/edit-profile`;
+    //const apiUrl = `${base}/api/users/edit-profile`;
 
     try {
       // Logic to convert skills string back to array to avoid 500 error
@@ -99,10 +98,7 @@ const EditProfile = () => {
         skills: formData.skills.split(',').map(s => s.trim()).filter(s => s !== "")
       };
 
-      const res = await axios.put(apiUrl, payload, {
-        headers: { "Content-Type": "application/json" },
-        withCredentials: true,
-      });
+      const res = await axiosInstance.put('users/edit-profile', payload);
 
       if (res.data.success) {
         if (setUser) setUser(res.data.user);
