@@ -12,7 +12,7 @@ import axios from 'axios';
 import useUserStore from '../store/userStore.js';
 
 const Profile = () => {
-  const { setUser } = useUserStore(); 
+  const { setUser,user } = useUserStore(); 
   const [profileData, setProfileData] = useState({
     name: '',
     degree: '',
@@ -185,8 +185,14 @@ const Profile = () => {
               <div className="bg-gradient-to-r from-[#5F9D08] to-[#4A8B07] h-32 rounded-t-3xl relative">
                 <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
                   <div className="w-28 h-28 rounded-full border-4 border-white bg-gray-100 overflow-hidden flex items-center justify-center">
-                    {profileData.profilePhoto ? (
-                      <img src={profileData.profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                    {/* Check user from store first, then fallback to local state */}
+                    {(user?.profilePhoto || profileData.profilePhoto) ? (
+                      <img 
+                        src={`${user?.profilePhoto || profileData.profilePhoto}?t=${new Date().getTime()}`} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => { e.target.style.display = 'none'; }} 
+                      />
                     ) : (
                       <div className="text-2xl text-[#5F9D08] font-bold">
                         {profileData.name ? profileData.name.split(' ').map(n => n[0]).join('') : 'U'}
@@ -199,7 +205,7 @@ const Profile = () => {
               <div className="pt-20 pb-6 px-6 text-center">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-1">{profileData.name}</h2>
                 
-                {/* ✅ Shortlist Status Badge */}
+                {/*  Shortlist Status Badge */}
                 <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-3 ${
                   profileData.currentStatus === 'Accepted' 
                     ? 'bg-green-100 text-green-700' 
@@ -213,13 +219,13 @@ const Profile = () => {
 
                 <div className="mt-6 bg-gray-100 p-4 rounded-xl text-left space-y-4">
                   <div className="flex items-center space-x-3 text-gray-600">
-                    <FiMail /> <span className="text-sm truncate">{profileData.email}</span>
+                    <FiMail className="mt-1 flex-shrink-0" /> <span className="text-sm break-all">{profileData.email}</span>
                   </div>
                   <div className="flex items-center space-x-3 text-gray-600">
-                    <FiMapPin /> <span className="text-sm">{profileData.city || "Add Location"}</span>
+                    <FiMapPin className="mt-1 flex-shrink-0" /> <span className="text-sm">{profileData.city || "Add Location"}</span>
                   </div>
                   <div className="flex items-center space-x-3 text-gray-600">
-                    <FiGithub /> <span className="text-sm truncate">{profileData.github || "Add GitHub"}</span>
+                    <FiGithub className="mt-1 flex-shrink-0" /> <span className="text-sm break-all">{profileData.github || "Add GitHub"}</span>
                   </div>
                 </div>
 
