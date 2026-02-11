@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { axiosInstance } from "../utils/axiosInstance";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiCheckCircle, FiXCircle, FiTrash2, FiCheckSquare,FiRefreshCw } from "react-icons/fi";
@@ -16,13 +16,11 @@ const NotificationsPage = () => {
   const backend_url = import.meta.env.VITE_BACKEND_URL;
   const isMobile = windowWidth < 768;
 
-  // ✅ Fetch notifications
+  //  Fetch notifications
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${backend_url}/api/users/notifications`, {
-        withCredentials: true,
-      });
+      const res = await axiosInstance.get('/users/notifications');
       setNotifications(res.data.notifications || []);
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -32,14 +30,10 @@ const NotificationsPage = () => {
     }
   };
 
-  // ✅ Mark single notification as read
+  //  Mark single notification as read
   const markAsRead = async (id) => {
     try {
-      await axios.patch(
-        `${backend_url}/api/users/notifications/${id}/read`,
-        {},
-        { withCredentials: true }
-      );
+      await axiosInstance.patch(`/users/notifications/${id}/read`);
       setNotifications((prev) =>
         prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
       );
@@ -48,50 +42,38 @@ const NotificationsPage = () => {
     }
   };
 
-  // ✅ Delete single notification
+  //  Delete single notification
   const deleteNotification = async (id) => {
     try {
-      await axios.delete(`${backend_url}/api/users/notifications/${id}`, {
-        withCredentials: true,
-      });
+      await axiosInstance.delete(`/users/notifications/${id}`);
       setNotifications((prev) => prev.filter((n) => n._id !== id));
     } catch {
       toast.error("Failed to delete notification");
     }
   };
 
-  // ✅ Bulk: Mark all as read
+  //  Bulk: Mark all as read
   const markAllAsRead = async () => {
-    try {
-      await Promise.all(
-        notifications
-          .filter((n) => !n.isRead)
-          .map((n) =>
-            axios.patch(`${backend_url}/api/users/notifications/${n._id}/read`, {}, { withCredentials: true })
-          )
-      );
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      toast.success("All notifications marked as read");
-    } catch {
-      toast.error("Failed to mark all as read");
-    }
-  };
+  try {
+    // Logic: Send ONE request instead of a map/Promise.all
+    await axiosInstance.patch('/users/notifications/read-all');
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    toast.success("All notifications marked as read");
+  } catch {
+    toast.error("Failed to mark all as read");
+  }
+};
 
-  // ✅ Bulk: Delete all
-  const deleteAll = async () => {
-    try {
-      await Promise.all(
-        notifications.map((n) =>
-          axios.delete(`${backend_url}/api/users/notifications/${n._id}`, { withCredentials: true })
-        )
-      );
-      setNotifications([]);
-      toast.success("All notifications deleted");
-    } catch {
-      toast.error("Failed to delete all");
-    }
-  };
-
+  //  Bulk: Delete all
+ const deleteAll = async () => {
+  try {
+    await axiosInstance.delete('/users/notifications/delete-all');
+    setNotifications([]);
+    toast.success("All notifications deleted");
+  } catch {
+    toast.error("Failed to delete all notifications");
+  }
+};
   // Resize listener
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -126,15 +108,15 @@ const NotificationsPage = () => {
         }`}
       >
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-md p-6 md:p-12">
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-10">
             {/* Header */}
-              <div className="border-b pb-4 mb-4 border-gray-200 flex justify-between items-center">
-                <h1 className="text-2xl font-semibold text-gray-800">Notifications</h1>
-                <div className="flex space-x-4">
+              <div className="border-b pb-4 mb-4 border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Notifications</h1>
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full sm:w-auto">
                   {/* Updated Refresh Button with Icon */}
                   <button 
                     onClick={fetchNotifications} 
-                    className="flex items-center gap-1 text-sm text-[#5F9D08] hover:underline"
+                    className="flex items-center gap-1 text-xs sm:text-sm text-[#5F9D08] font-semibold hover:bg-green-50 px-2 py-1 rounded-md transition"
                   >
                     <motion.div
                       animate={loading ? { rotate: 360 } : { rotate: 0 }}
@@ -179,9 +161,9 @@ const NotificationsPage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                   >
-                    <div className="flex items-start space-x-3">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
                       <div
-                        className={`w-10 h-10 flex items-center justify-center rounded-full ${
+                        className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full text-lg${
                           notification.isRead ? "bg-gray-300" : "bg-[#5F9D08] text-white"
                         }`}
                       >
@@ -191,10 +173,10 @@ const NotificationsPage = () => {
                         {notification.type === "internship_posted" && "📢"}
                         {notification.type === "general" && "🔔"}
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p
-                          className={`text-sm sm:text-base ${
-                            notification.isRead ? "text-gray-500" : "text-gray-800 font-medium"
+                          className={`text-sm sm:text-base break-words leading-tight ${
+                            notification.isRead ? "text-gray-500" : "text-gray-800 font-semibold"
                           }`}
                         >
                           {notification.message}
@@ -202,11 +184,11 @@ const NotificationsPage = () => {
                         <p className="text-gray-400 text-xs mt-1">{notification.timeAgo}</p>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex items-center space-x-2 flex-shrink-0">
                       {!notification.isRead && (
                         <button
                           onClick={() => markAsRead(notification._id)}
-                          className="text-green-600 hover:text-green-800"
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-full transition"
                           title="Mark as Read"
                         >
                           <FiCheckCircle size={18} />
@@ -214,7 +196,7 @@ const NotificationsPage = () => {
                       )}
                       <button
                         onClick={() => deleteNotification(notification._id)}
-                        className="text-red-500 hover:text-red-700"
+                        className="p-2 text-red-400 hover:bg-red-50 rounded-full transition"
                         title="Delete"
                       >
                         <FiXCircle size={18} />
@@ -224,7 +206,7 @@ const NotificationsPage = () => {
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-10 text-center text-gray-500 italic">
                 🎉 No notifications yet. Stay tuned!
               </div>
             )}

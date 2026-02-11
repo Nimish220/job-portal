@@ -14,7 +14,12 @@ import {
   getInternshipById,
   forgotPassword,
   resetPassword,
-  updateProfilePhoto
+  updateProfilePhoto,
+  fetchNotifications,
+  markAllNotificationsRead, 
+  deleteAllNotifications,
+  markAsRead,
+  deleteNotification
 } from "../controllers/userController.js";
 import { isSeeker, protect } from "../middlewares/authMiddleware.js";
 import upload,{uploadImage} from "../middlewares/multer.js";
@@ -41,4 +46,9 @@ router.get('/me', protect,isSeeker, getCurrentUser);
 router.post("/forgot-password", forgotPassword); // Sends the email
 router.put("/reset-password/:token", resetPassword); // Updates the password in DB
 router.put("/update-photo", protect, isSeeker, uploadImage.single("profilePhoto"), updateProfilePhoto);
+router.get("/notifications", protect, fetchNotifications);
+router.patch("/notifications/read-all", protect, markAllNotificationsRead);
+router.delete("/notifications/delete-all", protect, deleteAllNotifications);
+router.patch("/notifications/:id/read", protect, markAsRead);
+router.delete("/notifications/:id", protect, deleteNotification);
 export default router;

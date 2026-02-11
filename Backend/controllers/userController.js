@@ -603,3 +603,71 @@ export const updateProfilePhoto = async (req, res) => {
     res.status(500).json({ message: "Upload failed", error: error.message });
   }
 };
+//  1. Fetch all notifications for the logged-in user
+export const fetchNotifications = async (req, res) => {
+    try {
+        const notifications = await Notification.find({ recipient: req.user._id })
+            .sort({ createdAt: -1 });
+        res.status(200).json({ success: true, notifications });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error fetching notifications" });
+    }
+};
+
+//  2. Mark a SINGLE notification as read
+export const markAsRead = async (req, res) => {
+    try {
+        const notification = await Notification.findByIdAndUpdate(
+            req.params.id,
+            { isRead: true },
+            { new: true }
+        );
+        if (!notification) return res.status(404).json({ message: "Notification not found" });
+        res.status(200).json({ success: true, notification });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error marking as read" });
+    }
+};
+
+//  3. Delete a SINGLE notification (Fixes your Crash)
+export const deleteNotification = async (req, res) => {
+    try {
+        const notification = await Notification.findByIdAndDelete(req.params.id);
+        if (!notification) return res.status(404).json({ message: "Notification not found" });
+        res.status(200).json({ success: true, message: "Notification deleted" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error deleting notification" });
+    }
+};
+//  BULK: Mark all notifications as read
+export const markAllNotificationsRead = async (req, res) => {
+    try {
+        const userId = req.user._id; // Ensure your auth middleware provides req.user
+        
+        // Update all notifications for this user where isRead is false
+        await Notification.updateMany(
+            { recipient: userId, isRead: false },
+            { $set: { isRead: true } }
+        );
+
+        return res.status(200).json({ success: true, message: "All notifications marked as read" });
+    } catch (error) {
+        console.error("Bulk Read Error:", error);
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+//  BULK: Delete all notifications for a user
+export const deleteAllNotifications = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        
+        // Remove all documents where the recipient is this user
+        await Notification.deleteMany({ recipient: userId });
+
+        return res.status(200).json({ success: true, message: "All notifications deleted successfully" });
+    } catch (error) {
+        console.error("Bulk Delete Error:", error);
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+};
