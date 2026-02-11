@@ -8,7 +8,7 @@ import {
 import { FaLinkedin, FaTwitter, FaGlobe,FaCheckCircle } from 'react-icons/fa';
 import { AnimatePresence,motion } from 'framer-motion';
 import NavSearchBar from '../components/Header/NavSearchBar';
-import axios from 'axios';
+import { axiosInstance } from '../utils/axiosInstance';
 import useUserStore from '../store/userStore.js';
 
 const Profile = () => {
@@ -54,9 +54,7 @@ const Profile = () => {
         setLoading(true);
         
         // 1. Fetch Profile Data
-        const profileRes = await axios.get(`${backend_url}/users/profile`, {
-          withCredentials: true 
-        });
+        const profileRes = await axiosInstance.get('/users/profile');
 
         if (profileRes.data.success && profileRes.data.user) {
           const user = profileRes.data.user;
@@ -66,9 +64,7 @@ const Profile = () => {
           let latestStatus = "Pending";
           try {
             // Updated to common route naming convention; check your backend!
-            const appRes = await axios.get(`${backend_url}/applications/my-applications`, { 
-              withCredentials: true 
-            });
+            const appRes = await axiosInstance.get('/applications/my-applications');
             if (appRes.data.success && appRes.data.applications?.length > 0) {
               latestStatus = appRes.data.applications[0].status;
             }
@@ -108,23 +104,20 @@ const Profile = () => {
     fetchAllData();
   }, [backend_url, setUser]);
 
-  const updateProfileField = async (payload, setEditMode) => {
+ const updateProfileField = async (payload, setEditMode) => {
     try {
-      const res = await axios.put(`${backend_url}/users/edit-profile`, payload, {
-        withCredentials: true
-      });
+      const res = await axiosInstance.put('/users/edit-profile', payload);
+      
       if (res.data.success) {
         setProfileData(prev => ({ ...prev, ...payload }));
-        if (setUser && res.data.user) setUser(res.data.user);
+        if (setUser && res.data.user) setUser({ ...res.data.user });
         setEditMode(false);
         setShowPopup(true);
       }
     } catch (err) {
       console.error("Update Error:", err);
-      alert("Failed to update field.");
     }
-  };
-
+};
   const handleSkillsSave = () => updateProfileField({ skills: editedSkills }, setIsEditingSkills);
   const handleExperienceSave = () => updateProfileField({ experience: editedExperience }, setIsEditingExperience);
   const handleAboutSave = () => updateProfileField({ about: editedAbout }, setIsEditingAbout);
