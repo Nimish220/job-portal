@@ -109,10 +109,31 @@ export const updateRecruiterProfile = async (req, res) => {
 
     const updates = { ...req.body };
 
-    if (req.file && req.file.buffer) {
-      // Use helper to upload the buffer logged in your terminal
-      const uploadedUrl = await uploadToCloudinary(req.file.buffer);
+    if (req.files?.companyPanCardOrGstFile) {
+      const panFile = req.files.companyPanCardOrGstFile[0];
+      
+      if (panFile.mimetype !== "application/pdf") {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Strictly only PDF files are allowed for PAN/GST documents!" 
+        });
+      }
+
+      const uploadedUrl = await uploadToCloudinary(panFile.buffer, "recruiter_docs");
       updates.companyPanCardOrGstFile = uploadedUrl;
+    }
+    if (req.files?.logo) {
+      const logoFile = req.files.logo[0];
+
+      if (!logoFile.mimetype.startsWith("image/")) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Only images (jpg, png, etc.) are allowed for the logo!" 
+        });
+      }
+
+      const uploadedLogo = await uploadToCloudinary(logoFile.buffer, "company_logos");
+      updates.logo = uploadedLogo;
     }
 
     const updatedRecruiter = await Recruiter.findByIdAndUpdate(

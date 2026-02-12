@@ -88,6 +88,8 @@ const recruiterSchema = new mongoose.Schema({
     contact1: { type: String },
     contact2: { type: String },
     website: { type: String },
+    logo: { type: String },
+
 }, {
     timestamps: true,
 })

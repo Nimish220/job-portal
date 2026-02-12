@@ -47,5 +47,16 @@ export const uploadImage = multer({
     }
   },
 });
-
+export const uploadProfile = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    // We allow both here so the middleware doesn't crash on multi-field forms
+    if (file.mimetype === "application/pdf" || file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type! Only PDF and Images allowed."), false);
+    }
+  },
+});
 export default upload;

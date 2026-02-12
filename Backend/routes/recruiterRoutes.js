@@ -1,6 +1,6 @@
 import express from 'express';
 import {Job} from "../models/Job.js";
-import upload from '../middlewares/multer.js';
+import upload,{uploadProfile} from "../middlewares/multer.js";
 import { isRecruiter, protect } from '../middlewares/authMiddleware.js';
 import {
   deleteJob,
@@ -46,7 +46,13 @@ router.put("/reset-password/:token", resetPasswordRecruiter);
 // Recruiter profile
 router.get('/getProfile', protect, isRecruiter, getProfile);
 router.get('/me', protect, isRecruiter, getCurrentRecruiter);
-router.post('/update', protect, isRecruiter, upload.single("companyPanCardOrGstFile"), updateRecruiterProfile);
+router.post("/update", protect, isRecruiter,
+  uploadProfile.fields([
+    { name: "companyPanCardOrGstFile", maxCount: 1 },
+    { name: "logo", maxCount: 1 }
+  ]),
+  updateRecruiterProfile
+);
 
 // Job management
 router.post('/postJob', protect, isRecruiter,upload.single("file"), postJob);

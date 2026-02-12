@@ -7,7 +7,10 @@ import AllJobs_ActiveJobs from './RecruiterPages/AllJobs_ActiveJobs';
 import EditJob from './RecruiterPages/EditJob.jsx';
 import EditInternship from './RecruiterPages/EditInternship.jsx';
 import AllJobs_ClosedJobs from './RecruiterPages/AllJobs_ClosedJobs.jsx';
-import RecruiterProfile from './RecruiterPages/Recruiter Profile/RecruiterProfile';
+import RecruiterProfile from './RecruiterPages/RecruiterProfile/RecruiterProfile.jsx';
+import CompanyProfile from './RecruiterPages/RecruiterProfile/CompanyProfileForm.jsx';
+import UpdateRecruiter from './RecruiterPages/RecruiterProfile/UpdateRecruiter.jsx';
+import UpdateCompanyProfile from './RecruiterPages/RecruiterProfile/UpdateCompanyProfile.jsx'
 import RecruiterLogout from './RecruiterPages/Login_SignUp/RecruiterLogout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -24,7 +27,6 @@ import PostJob_Internship from './RecruiterPages/PostJob_Internship.jsx';
 import NotificationsRecr from './RecruiterPages/NotificationsRecr.jsx';
 import AcceptedApplicants from './RecruiterPages/AcceptedApplicants.jsx';
 import Applicants from './RecruiterPages/Applicants.jsx';
-import UpdateRecruiter from './RecruiterPages/UpdateRecruiter.jsx';
 import ApplicantsProfile from './RecruiterPages/ApplicantsProfile.jsx';
 import JobPage from './pages/JobPage.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
@@ -131,6 +133,8 @@ if (appLoading) {
         <Route path='/recruiters/applicants/:jobId' element={<ProtectedRoute allowedRole="recruiter"><Applicants /></ProtectedRoute>} />
         <Route path='/recruiters/internshipApplicants/:jobId' element={<ProtectedRoute allowedRole="recruiter"><Applicants /></ProtectedRoute>} />
         <Route path='/recruiters/updateRecruiter' element={<ProtectedRoute allowedRole="recruiter"><UpdateRecruiter /></ProtectedRoute>} />
+        <Route path="/recruiters/update-company" element={<ProtectedRoute allowedRole="recruiter"> <UpdateCompanyProfile /> </ProtectedRoute>}/>
+        <Route path="/recruiters/update-company" element={<ProtectedRoute allowedRole="recruiter"><UpdateCompanyProfile /></ProtectedRoute>}/>
         <Route path='/recruiters/applicantsProfile/:jobId/:applicantId' element={<ProtectedRoute allowedRole="recruiter"><ApplicantsProfile /></ProtectedRoute>} />
         <Route path='/recruiters/post-job/job' element={<ProtectedRoute allowedRole="recruiter"><PostJob_Job /></ProtectedRoute>} />
         <Route path="/recruiters/forgot-password" element={<RecruiterForgotPassword />} />
