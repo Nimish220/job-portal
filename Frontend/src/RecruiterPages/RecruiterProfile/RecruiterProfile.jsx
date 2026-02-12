@@ -82,9 +82,13 @@ const RecruiterProfile = () => {
         className="bg-[#5F9D08] text-white p-4 flex justify-between items-center w-full shadow-md z-50 fixed top-0"
       >
         <div className="flex items-center space-x-4">
-          <Link to="/recruiters/jobs/active">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden text-2xl text-white cursor-pointer"
+              >
+              <FiMenu />
+            </button>
             <img src={AmazonLogo} alt="Logo" className="w-8 h-8" />
-          </Link>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -98,22 +102,13 @@ const RecruiterProfile = () => {
       </motion.div>
 
       <div className="flex flex-col lg:flex-row flex-1 mt-16">
-        {/* Mobile Sidebar Toggle */}
-        <div className="lg:hidden w-full bg-white border-b border-gray-200 p-4 sticky top-16 z-40 flex items-center">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="text-3xl text-[#5F9D08] cursor-pointer"
-          >
-            <FiMenu />
-          </button>
-        </div>
-
         {/* Sidebar Logic */}
         {!isMobile && (
           <div className="hidden lg:block fixed top-20 left-0 z-30">
             <Sidebar isOpen={true} isMobile={false} />
           </div>
         )}
+        {/* Mobile Sidebar Toggle */}
         <AnimatePresence>
           {isSidebarOpen && (
             <Sidebar
