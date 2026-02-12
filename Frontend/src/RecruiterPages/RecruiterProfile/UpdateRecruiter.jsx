@@ -4,7 +4,7 @@ import { axiosInstance } from "../../utils/axiosInstance";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { motion, AnimatePresence } from "framer-motion";
-import { FiMenu } from "react-icons/fi";
+import { FiMenu,FiArrowLeft } from "react-icons/fi";
 import { FaHome } from "react-icons/fa";
 import Sidebar from "../../components/SideBar_Recr";
 import AmazonLogo from "../../assets/images/AmazonLogo.png";
@@ -12,13 +12,16 @@ import Notifications from "../../assets/images/notifications00.png";
 
 const UpdateRecruiter = () => {
   const [formData, setFormData] = useState({
-    email: "",
-    phone: "",
+    recruiterName: "",
+    jobTitle:"",
     companyName: "",
+    email: "",
+    linkedin:"",
+    phone: "",
+    profilePhoto: "",
   });
-  const [file, setFile] = useState(null);
   const [uiError, setUiError] = useState(""); 
-  
+  const [profileFile, setProfileFile] = useState(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -40,9 +43,13 @@ const UpdateRecruiter = () => {
         const res = await axiosInstance.get("recruiters/getProfile");
         const recruiter = res.data.recruiter;
         setFormData({
+          recruiterName: recruiter.recruiterName || "",
+          jobTitle: recruiter.jobTitle || "",
           email: recruiter.email || "",
+          linkedin: recruiter.linkedin || "",
           phone: recruiter.phone || "",
           companyName: recruiter.companyName || "",
+          profilePhoto: recruiter.profilePhoto || "",
         });
       } catch (error) {
         toast.error("Failed to load recruiter details");
@@ -56,21 +63,6 @@ const UpdateRecruiter = () => {
     setUiError(""); 
   };
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    
-    // Strict PDF Check logic
-    if (selectedFile && selectedFile.type !== "application/pdf") {
-      setUiError("Only PDF files are allowed.");
-      setFile(null);
-      e.target.value = ""; 
-      return toast.error("Please select a PDF document.");
-    }
-
-    setFile(selectedFile);
-    setUiError("");
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.phone || !formData.companyName) {
@@ -81,10 +73,13 @@ const UpdateRecruiter = () => {
 
     try {
       const data = new FormData();
+      data.append("recruiterName", formData.recruiterName);
+      data.append("jobTitle",formData.jobTitle)
       data.append("email", formData.email);
+      data.append("linkedin",formData.linkedin)
       data.append("phone", formData.phone);
       data.append("companyName", formData.companyName);
-      if (file) data.append("companyPanCardOrGstFile", file);
+      if (profileFile) data.append("profilePhoto", profileFile);
 
       const res = await axiosInstance.post("recruiters/update", data, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -163,9 +158,24 @@ const UpdateRecruiter = () => {
               className="w-full max-w-5xl mx-auto p-6 md:p-10 bg-white shadow-xl rounded-3xl border border-gray-100"
             >
 
-              <h2 className="text-2xl font-bold mb-6 text-center text-[#5F9D08]">
-                Update Recruiter Profile
+              {/* Header with Back Button */}
+            <div className="relative flex items-center justify-center w-full mb-10 pb-6 border-b border-gray-100">
+
+              {/* Back Button - Fixed on the left */}
+              <button
+                onClick={() => navigate(-1)}
+                className="absolute left-0 z-10 flex items-center gap-1 text-[#5F9D08] font-bold text-xs sm:text-sm hover:text-green-700 transition-all group"
+              >
+                <FiArrowLeft className="group-hover:-translate-x-1 transition-transform" />
+                <span>Back</span>
+              </button>
+
+              {/* Centered Title - Slightly shifted on mobile */}
+              <h2 className="pl-6 lg:pl-0 text-lg sm:text-2xl font-black text-[#5F9D08] text-center uppercase tracking-tighter leading-tight">
+                Update <span className="text-gray-800">Recruiter</span>
               </h2>
+            </div>
+
 
               {uiError && (
                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg mb-6 text-center text-sm font-medium">
@@ -174,12 +184,78 @@ const UpdateRecruiter = () => {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="flex flex-col items-center sm:items-start space-y-4 col-span-full bg-gray-50 p-6 rounded-2xl border border-dashed border-gray-300">
+                <label className="text-[10px] font-bold text-black-400 uppercase tracking-widest">
+                  Recruiter Profile Photo
+                </label>
+                
+                <div className="flex flex-col sm:flex-row items-center gap-6 w-full">
+                  {/* Circular Preview Container */}
+                  <div className="relative group">
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md bg-white">
+                      <img
+                        src={profileFile ? URL.createObjectURL(profileFile) : (formData.profilePhoto || AmazonLogo)}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+
+                  {/* File Input */}
+                  <div className="flex-1 w-full">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setProfileFile(e.target.files[0])}
+                      className="block w-full text-xs text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-xs file:font-semibold
+                        file:bg-green-50 file:text-[#5F9D08]
+                        hover:file:bg-green-100 transition-all"
+                    />
+                    <p className="mt-2 text-[10px] text-black-400 text-center lg:text-left"><strong>Allowed: JPG, PNG. Max 2MB.</strong></p>
+                  </div>
+                </div>
+              </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InputField
+                    label="Full Name"
+                    type="text"
+                    name="recruiterName" // Make sure this matches the key in formData
+                    value={formData.recruiterName}
+                    onChange={handleChange}
+                    required
+                  />
+                  <InputField
+                    label="Job Title"
+                    type="text"
+                    name="jobTitle" // Make sure this matches the key in formData
+                    value={formData.jobTitle}
+                    onChange={handleChange}
+                    required
+                  />
+                  <InputField
+                    label="Company Name"
+                    type="text"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                    required
+                  />
                   <InputField
                     label="Email Address"
                     type="email"
                     name="email"
                     value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                  <InputField
+                    label="Linkedin"
+                    type="text"
+                    name="linkedin"
+                    value={formData.linkedin}
                     onChange={handleChange}
                     required
                   />
@@ -191,26 +267,6 @@ const UpdateRecruiter = () => {
                     onChange={handleChange}
                     required
                   />
-                  <InputField
-                    label="Legal Company Name"
-                    type="text"
-                    name="companyName"
-                    value={formData.companyName}
-                    onChange={handleChange}
-                    required
-                  />
-                  <div className="flex flex-col space-y-2">
-                    <label className="text-xs font-semibold text-gray-500">
-                      Company PAN/GST Document <span className="text-red-500">(PDF ONLY)</span>
-                    </label>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept=".pdf"
-                      className="w-full p-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5F9D08] text-sm bg-gray-50/50"
-                    />
-                  </div>
                 </div>
 
                 <div className="pt-4">
@@ -233,11 +289,12 @@ const UpdateRecruiter = () => {
   );
 };
 
-const InputField = ({ label, ...props }) => (
+const InputField = ({ label,value, ...props }) => (
   <div className="flex flex-col space-y-2">
-    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</label>
+    <label className="text-[10px] font-bold text-black-400 uppercase tracking-widest">{label}</label>
     <input
       {...props}
+      value={value ?? ""}
       className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5F9D08] focus:outline-none text-sm font-semibold text-gray-800"
     />
   </div>

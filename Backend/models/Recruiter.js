@@ -1,14 +1,14 @@
 import mongoose from 'mongoose';
 
 const recruiterSchema = new mongoose.Schema({
-    // recruiterName: {
-    //     type: String,
+     recruiterName: {
+        type: String,
     //     required: false,
-    // },
-    // jobTitle: {
-    //     type: String,
+     },
+     jobTitle: {
+        type: String,
     //     required: false,
-    // }, // removed by wafiya
+     }, // removed by wafiya
     email: {
         type: String,
         required: true,
@@ -88,6 +88,7 @@ const recruiterSchema = new mongoose.Schema({
     contact1: { type: String },
     contact2: { type: String },
     website: { type: String },
+    profilePhoto: { type: String, default: "" },
     logo: { type: String },
 
 }, {

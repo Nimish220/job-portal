@@ -46,7 +46,7 @@
         },
         success: true,
         token,
-        user: { name: recruiter.name, id: recruiter._id, role: recruiter.role },
+        user: { name: recruiter.recruiterName, id: recruiter._id, role: recruiter.role },
         message: "Login successfully",
       });
     } catch (err) {
@@ -106,9 +106,21 @@ export const updateRecruiterProfile = async (req, res) => {
     if (!req.recruiter) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
+    const { recruiterName, email, phone, companyName, ...otherUpdates } = req.body;
 
-    const updates = { ...req.body };
-
+    const updates = { 
+      recruiterName, // Matches your un-commented model field
+      email, 
+      phone, 
+      companyName, 
+      ...otherUpdates 
+    };
+    //const updates = { ...req.body };
+    if (req.files?.profilePhoto) {
+      const photoFile = req.files.profilePhoto[0];
+      const uploadedUrl = await uploadToCloudinary(photoFile.buffer, "profile-images");
+      updates.profilePhoto = uploadedUrl;
+    }
     if (req.files?.companyPanCardOrGstFile) {
       const panFile = req.files.companyPanCardOrGstFile[0];
       
@@ -138,8 +150,8 @@ export const updateRecruiterProfile = async (req, res) => {
 
     const updatedRecruiter = await Recruiter.findByIdAndUpdate(
       req.recruiter._id,
-      updates,
-      { new: true }
+      { $set: updates }, // Use $set to be explicit
+      { new: true, runValidators: true }
     );
 
     return res.status(200).json({

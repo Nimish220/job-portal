@@ -49,7 +49,8 @@ router.get('/me', protect, isRecruiter, getCurrentRecruiter);
 router.post("/update", protect, isRecruiter,
   uploadProfile.fields([
     { name: "companyPanCardOrGstFile", maxCount: 1 },
-    { name: "logo", maxCount: 1 }
+    { name: "logo", maxCount: 1 },
+    { name: "profilePhoto", maxCount: 1 }
   ]),
   updateRecruiterProfile
 );

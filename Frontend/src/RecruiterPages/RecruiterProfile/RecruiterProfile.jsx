@@ -11,6 +11,7 @@ import { axiosInstance } from "../../utils/axiosInstance";
 import { FaHome, FaKey, FaUserEdit, FaSignOutAlt } from "react-icons/fa";
 
 const RecruiterProfile = () => {
+  const [recruiterPhoto, setRecruiterPhoto] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
@@ -43,15 +44,16 @@ const RecruiterProfile = () => {
       const res = await axiosInstance.get('recruiters/getProfile');
       const recruiter = res.data.recruiter;
 
-      setUserName(recruiter.name || "");
+      setUserName(recruiter.recruiterName || "");
       setEmail(recruiter.email || "");
       setLinkedin(recruiter.linkedin || "");
-      setDesignation(recruiter.designation || "");
+      setDesignation(recruiter.jobTitle || "Recruiter");
       setPhone(recruiter.phone || "");
       setCompanyName(recruiter.companyName || "");
       setWebsite(recruiter.website || "");
       setAddress(recruiter.address || "");
       setIndustryType(recruiter.industry_type || "");
+      setRecruiterPhoto(recruiter.profilePhoto || "");
       setLogoUrl(recruiter.logo || "");
 
       setLoading(false);
@@ -66,13 +68,18 @@ const RecruiterProfile = () => {
     fetchProfile();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen text-lg font-semibold text-gray-600">
-        Loading Profile...
+if (loading) {
+  return (
+    <div className="flex items-center justify-center min-h-screen w-full bg-gray-50">
+      <div className="flex flex-col items-center">
+        {/* Simple Spinner */}
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#5F9D08] mb-4"></div>
+        <p className="text-[#5F9D08] font-semibold animate-pulse">Loading Profile...</p>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   return (
     <motion.div
@@ -104,14 +111,14 @@ const RecruiterProfile = () => {
         </div>
       </motion.div>
 
-      <div className="flex flex-1 mt-16">
+      <div className="flex flex-col lg:flex-row flex-1 mt-16">
         {/* Mobile Sidebar Toggle Button */}
-        <div className="lg:hidden p-4 fixed top-16 left-0 z-40">
-          <button
+        <div className="lg:hidden w-full bg-white border-b border-gray-200 p-4 sticky top-16 z-40 flex items-center">
+         <button
             onClick={() => setIsSidebarOpen(true)}
-            className="text-3xl text-[#5F9D08] cursor-pointer bg-white rounded-full p-1 shadow-md"
-          >
-            <FiMenu />
+            className="text-3xl text-[#5F9D08] cursor-pointer"
+            >
+          <FiMenu />
           </button>
         </div>
 
@@ -121,7 +128,6 @@ const RecruiterProfile = () => {
             <Sidebar isOpen={true} isMobile={false} />
           </div>
         )}
-
         {/* Mobile Sidebar (Drawer) */}
         <AnimatePresence>
           {isSidebarOpen && (
@@ -134,8 +140,7 @@ const RecruiterProfile = () => {
         </AnimatePresence>
 
         {/* Main Content Area - Responsive Centering */}
-        <div className="flex-1 w-full mt-10 lg:ml-64 px-4 sm:px-8 pb-10 overflow-x-hidden">
-          {/* items-center centers everything on mobile, lg:items-start aligns left on desktop */}
+        <div className="flex-1 w-full lg:ml-64 px-4 sm:px-8 py-6 md:py-10 overflow-x-hidden">
           <div className="flex flex-col items-center lg:items-start lg:flex-row gap-8 w-full max-w-6xl mx-auto">
             
             {/* Company Info Section */}
@@ -175,7 +180,7 @@ const RecruiterProfile = () => {
               {/* Profile Header Background */}
               <div className="relative bg-gradient-to-r from-[#5F9D08] to-green-500 text-white py-10 px-6 text-center">
                 <motion.img
-                  src={logoUrl || AmazonLogo}
+                  src={recruiterPhoto || AmazonLogo}
                   alt="Recruiter"
                   className="w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg object-cover"
                   initial={{ scale: 0 }}
@@ -196,11 +201,9 @@ const RecruiterProfile = () => {
                 <InfoRow label="LinkedIn" value={linkedin} isLink />
                 <InfoRow label="Phone" value={phone} />
                 <InfoRow label="Company" value={companyName} />
-                <InfoRow label="Website" value={website} isLink />
-                <InfoRow label="Address" value={address} />
               </div>
 
-              <div className="border-t border-gray-100 my-2"></div>
+              {/*<div className="border-t border-gray-100 my-2"></div>*/}
 
               {/* Sidebar-style Action Buttons */}
               <div className="flex flex-col gap-3 px-6 pb-8">
