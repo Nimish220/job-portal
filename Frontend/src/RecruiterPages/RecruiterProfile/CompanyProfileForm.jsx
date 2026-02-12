@@ -60,7 +60,7 @@ const CompanyProfileForm = () => {
     >
       <Section title="General Information">
         <InfoRow label="Company Name" value={company.companyName} />
-        <InfoRow label="Industry" value={company.industry_type} />
+        <InfoRow label="Industry" value={company.industryType} />
       </Section>
 
       <Section title="Contact Details">

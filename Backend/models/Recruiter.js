@@ -49,9 +49,6 @@ const recruiterSchema = new mongoose.Schema({
     //         type: String,
     //     }
     // },
-    // industryType: {
-    //     type: String,
-    // }, // removed by wafiya
     // registrationNumber: {  //removed due to new register page (By-tushar)
     //     type: String,
     // },
@@ -61,6 +58,9 @@ const recruiterSchema = new mongoose.Schema({
     // companyLogo: {
     //     type: String,
     // },
+    industryType: {
+         type: String,
+     },
     companyPanCardOrGstFile: {  //GST or PAN added
         type: String, 
     },
@@ -76,10 +76,9 @@ const recruiterSchema = new mongoose.Schema({
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
-    // New optional fields from form
     yearEstablished: { type: String },
     headquarters: { type: String },
-    industry: { type: String },
+    //industry: { type: String },
     cinNumber: { type: String },
     linkedin: { type: String },
     achievements: { type: String },
