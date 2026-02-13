@@ -111,7 +111,7 @@ function Applicants() {
 
         {/* Sidebar */}
         {!isMobile && (
-          <div className="hidden lg:block fixed top-16 left-0 h-full w-60 z-30">
+          <div className="hidden lg:block fixed top-20 left-0 h-full w-60 z-30">
             <Sidebar isOpen={true} isMobile={false} />
           </div>
         )}
@@ -153,7 +153,7 @@ function Applicants() {
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 shadow-inner">
                         <img
-                          src={applicant.photo || '/default-avatar.png'}
+                          src={applicant.profilePhoto || '/default-avatar.png'}
                           alt={applicant.name}
                           className="w-full h-full object-cover"
                         />

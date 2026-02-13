@@ -35,7 +35,7 @@ router.post("/apply", async (req, res) => {
 router.get("/job/:jobId", protect, isRecruiter, async (req, res) => {
   try {
     const job = await Job.findById(req.params.jobId)
-      .populate("candidates", "name email university degree github about skills photo"); // ✅ Added photo
+      .populate("candidates", "name email university degree github about skills profilePhoto"); 
 
     if (!job) return res.status(404).json({ message: "Job not found" });
     res.json(job.candidates);
@@ -52,7 +52,7 @@ router.get("/internship/:jobId", protect, isRecruiter, async (req, res) => {
   try {
     // We use Internship model here
     const internshipData = await Internship.findById(req.params.jobId)
-      .populate("candidates", "name email university degree github about skills photo"); // ✅ Added photo
+      .populate("candidates", "name email university degree github about skills profilePhoto"); 
 
     if (!internshipData) {
       return res.status(404).json({ message: "Internship record not found" });
