@@ -11,6 +11,7 @@ import { axiosInstance } from '../utils/axiosInstance';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMenu } from 'react-icons/fi';
 import { FiEdit, FiX } from 'react-icons/fi';
+import { FaBell, FaHome } from 'react-icons/fa';
 function JobPage() {
   const [jobs, setJobs] = useState([]);
   const [internships, setInternships] = useState([]);
@@ -82,7 +83,7 @@ function JobPage() {
       const res = await axiosInstance.get('recruiters/getProfile');
       setUserName(res.data.recruiter?.companyName || 'Guest');
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      //console.error('Error fetching profile:', error);
       toast.error('Failed to fetch recruiter details');
       setUserName('Guest');
     }
@@ -146,32 +147,42 @@ function JobPage() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="h-screen flex bg-gray-100 flex-col">
       {/* Top Navigation Bar */}
-      <motion.div className="bg-[#5F9D08] sticky top-0 left-0 text-white p-4 flex flex-wrap justify-between items-center w-full">
-        <div className="flex items-center space-x-2 mb-2 sm:mb-0 w-full sm:w-auto">logo</div>
-        <div className="flex items-center space-x-4 w-full sm:w-auto justify-end">
+      <motion.div className="bg-[#5F9D08] fixed top-0 left-0 z-50 text-white p-4 flex justify-between items-center w-full shadow-md">
+        
+        {/* Left Section: Hamburger and Logo Word */}
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+            className="text-2xl flex items-center p-1 hover:opacity-80 lg:hidden"
+          >
+            <FiMenu />
+          </button>
+          <span className="font-bold text-xl tracking-tight">logo</span>
+        </div>
+
+        {/* Right Section: Bell, Home, and Profile Image with Name */}
+        <div className="flex items-center gap-6">
           <Link to="/recruiters/notifications">
-            <img src={Notifications} alt="Notifications Icon" className="w-8 h-8 sm:w-10 sm:h-10" />
+            <FaBell className="text-2xl cursor-pointer hover:text-gray-300" />
           </Link>
-          <Link to="/recruiters/getProfile" className="flex flex-row items-center gap-2">
-            <div className="rounded-full bg-gray-300 w-6 h-6 sm:w-8 sm:h-8">
-              <img src={ProfileImage} alt="" className="w-full h-full rounded-full" />
+          <Link to="/recruiters/jobs/active">
+            <FaHome className="text-2xl cursor-pointer hover:text-gray-300" />
+          </Link>
+          <Link to="/recruiters/getProfile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <div className="rounded-full bg-gray-300 w-8 h-8 overflow-hidden border border-white">
+              <img src={ProfileImage} alt="Profile" className="w-full h-full object-cover" />
             </div>
-            <span className="text-sm sm:text-base">{userName}</span>
+            <span className="hidden sm:inline font-bold text-sm truncate max-w-[150px]">
+              {userName || "Recruiter"}
+            </span>
           </Link>
         </div>
       </motion.div>
 
-      <motion.div className="flex flex-1 flex-col sm:flex-row">
-        {/* Sidebar Toggle */}
-        <div className="lg:hidden p-4">
-          <button onClick={() => setIsSidebarOpen(true)} className="text-3xl text-[#5F9D08] cursor-pointer">
-            <FiMenu />
-          </button>
-        </div>
-
+      <motion.div className="flex flex-1 flex-col sm:flex-row pt-16">
         {/* Sidebar */}
         {!isMobile && (
-          <div className="hidden lg:block fixed top-20 left-0 z-30">
+          <div className="hidden lg:block fixed top-20 left-0 z-30 h-[calc(100vh-64px)]">
             <Sidebar isOpen={true} isMobile={false} />
           </div>
         )}
@@ -181,8 +192,8 @@ function JobPage() {
           )}
         </AnimatePresence>
 
-        {/* Main Content */}
-        <motion.div className="flex-1 p-4 bg-gray-100 lg:ml-64 justify-center">
+        {/* Main Content Area */}
+        <motion.div className="flex-1 p-4 bg-gray-100 lg:ml-64 justify-center relative z-10">
           {/* Tabs */}
           <div className="flex space-x-6 border-b border-gray-300 mb-6">
             <button
@@ -199,7 +210,7 @@ function JobPage() {
             </button>
           </div>
 
-          {/* Jobs Tab */}
+          {/* Jobs Tab Content */}
           {activeTab === "jobs" && (
             <>
               <h2 className="text-lg sm:text-2xl font-semibold mb-2">All Jobs</h2>
@@ -208,30 +219,24 @@ function JobPage() {
                 <div className="text-center"><p>Loading...</p></div>
               ) : jobsError ? (
                 <p className="text-red-500">{jobsError}</p>
-              ) : jobs.length === 0 ? (
-                <p>No active jobs found.</p>
               ) : (
                 <div className="space-y-4">
-                  {jobs.map(job => <JobCard key={job._id} {...normalize(job, "job")} activejob={true} />)}
+                  {jobs.length === 0 ? <p>No active jobs found.</p> : jobs.map(job => <JobCard key={job._id} {...normalize(job, "job")} activejob={true} />)}
                 </div>
               )}
             </>
           )}
 
-          {/* Internships Tab */}
+          {/* Internships Tab Content */}
           {activeTab === "internships" && (
             <>
               <h2 className="text-lg sm:text-2xl font-semibold mb-2">All Internships</h2>
               <h3 className="text-base sm:text-xl font-semibold text-[#5F9D08] mb-4">Active Internships</h3>
               {internshipsLoading ? (
                 <div className="text-center"><p>Loading...</p></div>
-              ) : internshipsError ? (
-                <p className="text-red-500">{internshipsError}</p>
-              ) : internships.length === 0 ? (
-                <p>No active internships found.</p>
               ) : (
                 <div className="space-y-4">
-                  {internships.map(i => <JobCard key={i._id} {...normalize(i, "internship")} activejob={true} />)}
+                  {internships.length === 0 ? <p>No active internships found.</p> : internships.map(i => <JobCard key={i._id} {...normalize(i, "internship")} activejob={true} />)}
                 </div>
               )}
             </>
