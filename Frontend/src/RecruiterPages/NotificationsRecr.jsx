@@ -1,25 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import Sidebar from "../components/SideBar_Recr";
 import { axiosInstance } from "../utils/axiosInstance";
 import { toast } from "react-toastify";
-import { AnimatePresence, motion } from "framer-motion";
-import { FiMenu, FiCheckCircle, FiXCircle, FiTrash2, FiCheckSquare, FiRefreshCw} from "react-icons/fi";
-import { FaHome } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiCheckCircle, FiXCircle, FiTrash2, FiCheckSquare, FiRefreshCw, FiMenu } from "react-icons/fi";
+import { FaBell,FaHome, FaUserAlt } from "react-icons/fa"; 
+import AmazonLogo from '../assets/images/AmazonLogo.png';
+import Sidebar from "../components/SideBar_Recr";
+import { Link } from "react-router-dom";
 
-import ProfileImage from "../assets/images/Profile_pics/1.jpg";
-
-export default function NotificationsRecr() {
+const NotificationsRecr = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [userName, setUserName] = useState("");
 
-  const backend_url = import.meta.env.VITE_BACKEND_URL;
-  const isMobile = screenWidth < 768;
+  const isMobile = windowWidth < 768;
 
-  //  Fetch recruiter profile (for top nav)
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -30,224 +27,197 @@ export default function NotificationsRecr() {
       }
     };
     fetchProfile();
-  }, [backend_url]);
+  }, []);
 
-  //  Fetch recruiter notifications
   const fetchNotifications = async () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get('recruiters/notifications');
-      setNotifications(res.data.notifications || []);
+      const rawData = res.data.notifications || [];
+      const sortedData = rawData.sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      
+      setNotifications(sortedData);
     } catch (error) {
+      console.error("Fetch error:", error);
       toast.error("Failed to load notifications");
-      console.error("Error fetching notifications:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  //  Mark single notification as read
   const markAsRead = async (id) => {
     try {
       await axiosInstance.patch(`recruiters/notifications/${id}/read`);
       setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
-    } catch {
-      toast.error("Failed to mark as read");
-    }
+    } catch { toast.error("Failed to mark as read"); }
   };
 
-  //  Delete single notification
+  const markAllAsRead = async () => {
+    try {
+      await axiosInstance.patch('recruiters/notifications/read-all');
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      toast.success("All notifications marked as read");
+    } catch { toast.error("Failed to mark all as read"); }
+  };
+
   const deleteNotification = async (id) => {
     try {
       await axiosInstance.delete(`recruiters/notifications/${id}`);
       setNotifications((prev) => prev.filter((n) => n._id !== id));
-    } catch {
-      toast.error("Failed to delete notification");
-    }
+    } catch { toast.error("Failed to delete notification"); }
   };
 
-  //  Bulk: Mark all as read
-  const markAllAsRead = async () => {
-    try {
-      await Promise.all(
-        notifications
-          .filter((n) => !n.isRead)
-          .map((n) =>
-            axiosInstance.patch(`recruiters/notifications/${n._id}/read`)
-          )
-      );
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      toast.success("All notifications marked as read");
-    } catch {
-      toast.error("Failed to mark all as read");
-    }
-  };
-
-  //  Bulk: Delete all
   const deleteAll = async () => {
     try {
-      await Promise.all(
-        notifications.map((n) =>
-          axiosInstance.delete(`recruiters/notifications/${n._id}`)
-        )
-      );
+      await axiosInstance.delete('recruiters/notifications/delete-all');
       setNotifications([]);
       toast.success("All notifications deleted");
-    } catch {
-      toast.error("Failed to delete all");
-    }
+    } catch { toast.error("Failed to delete all"); }
   };
 
-  // Resize listener
   useEffect(() => {
-    const handleResize = () => setScreenWidth(window.innerWidth);
+    const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Initial load
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
+  useEffect(() => { fetchNotifications(); }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* Top Navbar */}
-      <motion.div
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="bg-[#5F9D08] text-white p-4 flex justify-between items-center w-full"
-      >
-        <div className="flex items-center space-x-4">
-          <Link to="/recruiters/jobs/active">
-            <FaHome className="text-2xl w-8 h-8 cursor-pointer hover:text-gray-300" />
-          </Link>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Link to="/recruiters/getProfile" className="flex flex-row items-center gap-2">
-            <div className="rounded-full bg-gray-300 w-8 h-8">
-              <img src={ProfileImage} alt="Profile" className="w-full h-full rounded-full" />
-            </div>
-            <span className="text-sm sm:text-base">{userName || "Loading..."}</span>
-          </Link>
-        </div>
-      </motion.div>
-
-      {/* Main Layout */}
-      <div className="flex flex-col lg:flex-row relative">
-        {/* Mobile Hamburger */}
-        <div className="lg:hidden p-4">
-          <button onClick={() => setIsSidebarOpen(true)} className="text-3xl text-[#5F9D08] cursor-pointer">
+    <div className="bg-gray-100 min-h-screen flex flex-col relative">
+      {/* 1. Navbar Logic - Optimized for both screens */}
+      <div className="bg-[#5F9D08] text-white p-4 flex justify-between items-center w-full fixed top-0 z-50 h-16 shadow-md">
+        
+        {/* Left Section: Hamburger and Logo */}
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+            className="text-2xl flex items-center p-1 hover:opacity-80 lg:hidden"
+          >
             <FiMenu />
           </button>
+          {/* Logo without Link */}
+          <img src={AmazonLogo} alt="Amazon Logo" className="w-8 h-8 object-contain" />
         </div>
 
-        {/* Sidebar for large screens */}
+        {/* Right Section: Exact Solid White Icons Match */}
+        <div className="flex items-center gap-6 pr-2">
+          {/* Bell Icon  */}
+            <Link to="/recruiters/notifications">
+              <FaBell className="text-2xl w-8 h-8  cursor-pointer hover:text-gray-300" />
+            </Link>
+            <Link to="/recruiters/jobs/active">
+              <FaHome className="text-2xl w-8 h-8  cursor-pointer hover:text-gray-300" />
+            </Link>
+
+          {/* User Profile Icon */}
+          <Link to="/recruiters/getProfile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <FaUserAlt className="text-xl text-white" />
+            {/* UserName only shows on screens larger than phone for clean UI */}
+            <span className="hidden sm:block font-bold text-sm truncate max-w-[150px]">
+              {userName || "Recruiter"}
+            </span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Main Layout Container */}
+      <div className="flex flex-1 flex-col md:flex-row">
+        {/* 2. Sidebar: Fixed on Desktop */}
         {!isMobile && (
-          <div className="hidden lg:block fixed top-20 left-0 z-30">
+          <div className="hidden lg:block fixed top-20 left-0 z-30 h-[calc(100vh-64px)] w-64">
             <Sidebar isOpen={true} isMobile={false} />
           </div>
         )}
 
-        {/* Sidebar for mobile (animated) */}
+        {/* Mobile Sidebar Overlay */}
         <AnimatePresence>
-          {isSidebarOpen && <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isMobile={true} />}
+          {isMobile && isSidebarOpen && (
+            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isMobile />
+          )}
         </AnimatePresence>
 
-        {/* Notifications Content */}
-        <main className={`flex-1 px-4 md:px-6 mt-2 ${!isMobile ? "lg:pl-64" : ""}`}>
+        {/* 3. Content Area: Responsible for Sidebar offset */}
+        <div
+          className={`flex-1 pt-20 pb-10 transition-all duration-300 px-4 md:px-8 ${
+            !isMobile ? "lg:pl-72" : ""
+          }`}
+        >
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-md p-6 md:p-12">
-              {/* Header */}
-                <div className="border-b pb-4 mb-4 border-gray-200 flex justify-between items-center">
-                  <h1 className="text-2xl font-semibold text-gray-800">Notifications</h1>
-                  <div className="flex space-x-4">
-                    {/*  Animated Refresh Button */}
-                    <button 
-                      onClick={fetchNotifications} 
-                      className="flex items-center gap-1 text-sm text-[#5F9D08] hover:underline cursor-pointer"
+            <div className="bg-white rounded-lg shadow-md p-4 md:p-10 border border-gray-100">
+              
+              {/* Notifications Header */}
+              <div className="border-b pb-4 mb-6 border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Notifications</h1>
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                  <button 
+                    onClick={fetchNotifications} 
+                    className="flex items-center gap-1 text-xs sm:text-sm text-[#5F9D08] font-semibold hover:bg-green-50 px-2 py-1 rounded-md transition"
+                  >
+                    <motion.div
+                      animate={loading ? { rotate: 360 } : { rotate: 0 }}
+                      transition={{ repeat: loading ? Infinity : 0, duration: 1, ease: "linear" }}
                     >
-                      <motion.div
-                        animate={loading ? { rotate: 360 } : { rotate: 0 }}
-                        transition={{ repeat: loading ? Infinity : 0, duration: 1, ease: "linear" }}
-                      >
-                        <FiRefreshCw />
-                      </motion.div>
-                      Refresh
-                    </button>
+                      <FiRefreshCw />
+                    </motion.div>
+                    Refresh
+                  </button>
 
-                    {notifications.length > 0 && (
-                      <>
-                        <button
-                          onClick={markAllAsRead}
-                          className="flex items-center gap-1 text-sm text-blue-600 hover:underline"
-                        >
-                          <FiCheckSquare /> Mark all read
-                        </button>
-                        <button
-                          onClick={deleteAll}
-                          className="flex items-center gap-1 text-sm text-red-600 hover:underline"
-                        >
-                          <FiTrash2 /> Delete all
-                        </button>
-                      </>
-                    )}
-                  </div>
+                  {notifications.length > 0 && (
+                    <>
+                      <button onClick={markAllAsRead} className="flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                        <FiCheckSquare /> Mark all read
+                      </button>
+                      <button onClick={deleteAll} className="flex items-center gap-1 text-sm text-red-600 hover:underline">
+                        <FiTrash2 /> Delete all
+                      </button>
+                    </>
+                  )}
                 </div>
+              </div>
 
-              {/* Notifications List */}
+              {/* Notification Items */}
               {loading ? (
-                <div className="p-8 text-center text-gray-500">Loading notifications...</div>
+                <div className="p-12 text-center text-gray-400 font-medium">Loading your updates...</div>
               ) : notifications.length > 0 ? (
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-gray-100">
                   {notifications.map((notification) => (
                     <motion.div
                       key={notification._id}
-                      className={`p-4 flex items-start justify-between ${
-                        notification.isRead ? "bg-gray-50" : "bg-white"
+                      className={`p-4 flex items-start justify-between transition-colors duration-200 rounded-lg mb-1 ${
+                        notification.isRead ? "bg-white" : "bg-green-50/30"
                       }`}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                     >
-                      <div className="flex items-start space-x-3">
-                        <div
-                          className={`w-10 h-10 flex items-center justify-center rounded-full ${
-                            notification.isRead ? "bg-gray-300" : "bg-[#5F9D08] text-white"
-                          }`}
-                        >
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <div className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full text-lg ${notification.isRead ? "bg-gray-200 text-gray-500" : "bg-[#5F9D08] text-white shadow-sm"}`}>
+                          {notification.type === "job_posted" && "💼"}
+                          {/*notification.type === "application_status" && "✅"*/}
+                          {notification.type === "internship_posted" && "📢"}
+                          {notification.type === "job_applied" && "📝"}
                           {notification.type === "new_application" && "👨‍💻"}
                           {notification.type === "job_status" && "📢"}
-                          {notification.type === "general" && "🔔"}
+                          {!["job_applied", "job_posted", "application_status", "internship_posted", "new_application", "job_status"].includes(notification.type) && "🔔"}
                         </div>
-                        <div>
-                          <p
-                            className={`text-sm sm:text-base ${
-                              notification.isRead ? "text-gray-500" : "text-gray-800 font-medium"
-                            }`}
-                          >
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm sm:text-base break-words leading-tight ${
+                            notification.isRead ? "text-gray-500" : "text-gray-800 font-semibold"
+                          }`}>
                             {notification.message}
                           </p>
                           <p className="text-gray-400 text-xs mt-1">{notification.timeAgo}</p>
                         </div>
                       </div>
-                      <div className="flex space-x-2">
+                      <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
                         {!notification.isRead && (
-                          <button
-                            onClick={() => markAsRead(notification._id)}
-                            className="text-green-600 hover:text-green-800"
-                            title="Mark as Read"
-                          >
+                          <button onClick={() => markAsRead(notification._id)} className="p-2 text-green-600 hover:bg-green-100 rounded-full transition">
                             <FiCheckCircle size={18} />
                           </button>
                         )}
-                        <button
-                          onClick={() => deleteNotification(notification._id)}
-                          className="text-red-500 hover:text-red-700"
-                          title="Delete"
-                        >
+                        <button onClick={() => deleteNotification(notification._id)} className="p-2 text-red-400 hover:bg-red-50 rounded-full transition">
                           <FiXCircle size={18} />
                         </button>
                       </div>
@@ -255,12 +225,14 @@ export default function NotificationsRecr() {
                   ))}
                 </div>
               ) : (
-                <div className="p-8 text-center text-gray-500">📭 No notifications yet.</div>
+                <div className="p-10 text-center text-gray-500 italic font-medium">📭 No notifications yet.</div>
               )}
             </div>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default NotificationsRecr;
