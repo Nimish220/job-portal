@@ -10,7 +10,7 @@ import { axiosInstance } from '../utils/axiosInstance';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMenu } from 'react-icons/fi';
 import ProfileImage from '../assets/images/Profile_pics/1.jpg';
-
+import { FaBell, FaHome } from 'react-icons/fa';
 function AllJobs_ClosedJobs() {
   const [jobs, setJobs] = useState([]);
   const [internships, setInternships] = useState([]);
@@ -149,32 +149,43 @@ function AllJobs_ClosedJobs() {
   });
 
   return (
-    <div className="h-screen flex bg-gray-100 flex-col">
+    <div className="min-h-screen flex bg-gray-100 flex-col pt-16">
       {/* Top Navigation Bar */}
-      <motion.div className="bg-[#5F9D08] text-white p-4 flex flex-wrap justify-between items-center w-full">
-        <div></div>
-        <div className="flex items-center space-x-4 w-full sm:w-auto justify-end">
-          <Link to="/recruiters/notifications">
-            <img src={Notifications} alt="Notifications Icon" className="w-8 h-8 sm:w-10 sm:h-10" />
-          </Link>
-          <Link to="/recruiters/getProfile" className="flex flex-row items-center gap-2">
-            <div className="rounded-full bg-gray-300 w-6 h-6 sm:w-8 sm:h-8">
-              <img src={ProfileImage} alt="" className="w-full h-full rounded-full" />
-            </div>
-            <span className="text-sm sm:text-base">{userName || 'Loading...'}</span>
-          </Link>
-        </div>
-      </motion.div>
+      <motion.div className="bg-[#5F9D08] fixed top-0 left-0 z-50 text-white p-4 flex justify-between items-center w-full shadow-md">
+              
+              {/* Left Section: Hamburger and Logo Word */}
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                  className="text-2xl flex items-center p-1 hover:opacity-80 lg:hidden"
+                >
+                  <FiMenu />
+                </button>
+                <span className="font-bold text-xl tracking-tight">logo</span>
+              </div>
+      
+              {/* Right Section: Bell, Home, and Profile Image with Name */}
+              <div className="flex items-center gap-6">
+                <Link to="/recruiters/notifications">
+                  <FaBell className="text-2xl cursor-pointer hover:text-gray-300" />
+                </Link>
+                <Link to="/recruiters/jobs/active">
+                  <FaHome className="text-2xl cursor-pointer hover:text-gray-300" />
+                </Link>
+                <Link to="/recruiters/getProfile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                  <div className="rounded-full bg-gray-300 w-8 h-8 overflow-hidden border border-white">
+                    <img src={ProfileImage} alt="Profile" className="w-full h-full object-cover" />
+                  </div>
+                  <span className="hidden sm:inline font-bold text-sm truncate max-w-[150px]">
+                    {userName || "Recruiter"}
+                  </span>
+                </Link>
+              </div>
+            </motion.div>
 
       <div className="flex flex-1 flex-col sm:flex-row">
-        {/* Sidebar */}
-        <div className="lg:hidden p-4">
-          <button onClick={() => setIsSidebarOpen(true)} className="text-3xl text-[#5F9D08] cursor-pointer">
-            <FiMenu />
-          </button>
-        </div>
         {!isMobile && (
-          <div className="hidden lg:block fixed top-20 left-0 z-30">
+          <div className="hidden lg:block fixed top-20 left-0 z-30 h-[calc(100vh-64px)] w-64 bg-transparent">
             <Sidebar isOpen={true} isMobile={false} />
           </div>
         )}
@@ -185,9 +196,9 @@ function AllJobs_ClosedJobs() {
         </AnimatePresence>
 
         {/* Main Content */}
-        <motion.div className="flex-1 p-4 bg-gray-100 lg:ml-64 justify-center">
+        <motion.div className="flex-1 p-4 bg-gray-100 lg:ml-64 justify-center relative z-10">
           {/*  Tabs */}
-          <div className="flex space-x-6 border-b border-gray-300 mb-6">
+          <div className="flex space-x-6 border-b border-gray-300 mb-6 sticky top-16 bg-gray-100 z-20 pt-2">
             <button
               onClick={() => setActiveTab("jobs")}
               className={`pb-2 cursor-pointer ${activeTab === "jobs" ? "border-b-4 border-[#5F9D08] font-semibold" : "text-gray-500"}`}
