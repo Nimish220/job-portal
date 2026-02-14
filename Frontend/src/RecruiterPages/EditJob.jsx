@@ -14,6 +14,7 @@ function EditJob() {
     const navigate = useNavigate();
     const backend_url = import.meta.env.VITE_BACKEND_URL;
     const fileInputRef = useRef(null);
+    const [pageLoading, setPageLoading] = useState(true);
 
     const [userName, setUserName] = useState(""); 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
@@ -87,6 +88,7 @@ function EditJob() {
                 
                 const profileRes = await axiosInstance.get('recruiters/getProfile');
                 setUserName(profileRes.data.recruiter.companyName);
+                setPageLoading(false);
             } catch (error) {
                 toast.error("Failed to load details");
             }
@@ -136,28 +138,56 @@ function EditJob() {
         toast.update(loadingToast, { render: "Update failed", type: "error", isLoading: false, autoClose: 3000 });
     }
 };
+    if (pageLoading) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-gray-100">
+                <div className="flex flex-col items-center gap-4">
+                    {/* Professional Spinner */}
+                    <div className="w-12 h-12 border-4 border-[#5F9D08] border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-[#5F9D08] font-semibold animate-pulse">Loading Internship Data...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
             {/* Navbar */}
-            <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-[#5F9D08] text-white p-4 flex justify-between items-center w-full shadow-md">
-                <Link to="/recruiters/jobs/active"><img src={AmazonLogo} alt="Logo" className="w-8 h-8" /></Link>
-                <div className="flex items-center gap-4">
-                    <Link to="/recruiters/notifications"><FaBell className="text-2xl cursor-pointer" /></Link>
-                    <Link to="/recruiters/jobs/active"><FaHome className="text-2xl cursor-pointer" /></Link>
-                    <div className="flex items-center gap-2">
-                        <div className="rounded-full bg-gray-300 w-8 h-8 overflow-hidden"><img src={ProfileImage} alt="" className="w-full h-full" /></div>
-                        <span className="text-sm">{userName || 'Loading...'}</span>
-                    </div>
-                </div>
-            </motion.div>
+           <motion.div className="bg-[#5F9D08] fixed top-0 left-0 z-50 text-white p-4 flex justify-between items-center w-full shadow-md h-16">
+                 <div className="flex items-center gap-3">
+                   <button 
+                     onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                     className="text-2xl flex items-center p-1 hover:opacity-80 lg:hidden"
+                   >
+                     <FiMenu />
+                   </button>
+                   <span className="font-bold text-xl tracking-tight">logo</span>
+                 </div>
+           
+                 <div className="flex items-center gap-6">
+                   <Link to="/recruiters/notifications"><FaBell className="text-2xl cursor-pointer hover:text-gray-300" /></Link>
+                   <Link to="/recruiters/jobs/active"><FaHome className="text-2xl cursor-pointer hover:text-gray-300" /></Link>
+                   <Link to="/recruiters/getProfile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                     <div className="rounded-full bg-gray-300 w-8 h-8 overflow-hidden border border-white">
+                       <img src={ProfileImage} alt="Profile" className="w-full h-full object-cover" />
+                     </div>
+                     <span className="hidden sm:inline font-bold text-sm truncate max-w-[150px]">
+                       {userName || "Recruiter"}
+                     </span>
+                   </Link>
+                 </div>
+               </motion.div>
 
-            <div className="flex flex-col lg:flex-row w-full">
-                <div className="lg:hidden p-4"><button onClick={() => setIsSidebarOpen(true)} className="text-3xl text-[#5F9D08] cursor-pointer"><FiMenu /></button></div>
-                {!isMobile && <div className="hidden lg:block fixed top-20 left-0 z-30"><Sidebar isOpen={true} isMobile={false} /></div>}
+            <div className="flex flex-col pt-16">
+                <div className="lg:hidden p-4"></div>
+                {!isMobile && (
+                    <aside className="hidden lg:block fixed top-20 left-0 w-64 bg-transparent z-30">
+                        <Sidebar isOpen={true} isMobile={false} />
+                    </aside>
+                    )}
                 <AnimatePresence>{isSidebarOpen && <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isMobile={true} />}</AnimatePresence>
 
-                <div className="flex-1 flex justify-center lg:mt-8 lg:ml-64 p-4">
+                <div className="flex-1 lg:ml-64 p-4 flex justify-center relative z-10 bg-gray-100">
                     <motion.div className="w-full max-w-3xl bg-white p-6 rounded shadow-md" initial="hidden" animate="visible" variants={fadeIn}>
                         <h2 className="text-2xl font-bold mb-8 text-center text-[#5F9D08]">Edit Job Posting</h2>
 
