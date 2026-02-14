@@ -145,7 +145,7 @@ function JobPage() {
   });
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="h-screen flex bg-gray-100 flex-col">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="min-h-screen flex bg-gray-100 flex-col">
       {/* Top Navigation Bar */}
       <motion.div className="bg-[#5F9D08] fixed top-0 left-0 z-50 text-white p-4 flex justify-between items-center w-full shadow-md">
         
