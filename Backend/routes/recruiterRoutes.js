@@ -29,7 +29,12 @@ import {
   getCandidateProfile,
   changePassword,
   forgotPasswordRecruiter,
-  resetPasswordRecruiter
+  resetPasswordRecruiter,
+  fetchNotifications,
+  markAllNotificationsRead,
+  deleteAllNotifications,
+  markAsRead,
+  deleteNotification
 } from '../controllers/recruiterController.js';
 
 const router = express.Router();
@@ -86,4 +91,11 @@ router.get(
 );
 router.get('/internships/:jobId/candidate/:applicantId', protect, isRecruiter, getCandidateProfile);
 
+//Notifications
+router.get("/notifications", protect, isRecruiter, fetchNotifications);
+router.patch("/notifications/read-all", protect, isRecruiter, markAllNotificationsRead);
+router.delete("/notifications/delete-all", protect, isRecruiter, deleteAllNotifications);
+// Individual actions
+router.patch("/notifications/:id/read", protect, isRecruiter, markAsRead);
+router.delete("/notifications/:id", protect, isRecruiter, deleteNotification);
 export default router;

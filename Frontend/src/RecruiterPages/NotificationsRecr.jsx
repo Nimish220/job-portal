@@ -7,7 +7,7 @@ import { FaBell,FaHome, FaUserAlt } from "react-icons/fa";
 import AmazonLogo from '../assets/images/AmazonLogo.png';
 import Sidebar from "../components/SideBar_Recr";
 import { Link } from "react-router-dom";
-
+import ProfileImage from '../assets/images/Profile_pics/1.jpg';
 const NotificationsRecr = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -98,8 +98,7 @@ const NotificationsRecr = () => {
           >
             <FiMenu />
           </button>
-          {/* Logo without Link */}
-          <img src={AmazonLogo} alt="Amazon Logo" className="w-8 h-8 object-contain" />
+          <span className="font-bold text-xl tracking-tight">logo</span>
         </div>
 
         {/* Right Section: Exact Solid White Icons Match */}
@@ -114,12 +113,13 @@ const NotificationsRecr = () => {
 
           {/* User Profile Icon */}
           <Link to="/recruiters/getProfile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <FaUserAlt className="text-xl text-white" />
-            {/* UserName only shows on screens larger than phone for clean UI */}
-            <span className="hidden sm:block font-bold text-sm truncate max-w-[150px]">
+            <div className="rounded-full bg-gray-300 w-8 h-8 overflow-hidden border border-white">
+              <img src={ProfileImage} alt="Profile" className="w-full h-full object-cover" />
+            </div>
+              <span className="hidden sm:inline font-bold text-sm truncate max-w-[150px]">
               {userName || "Recruiter"}
-            </span>
-          </Link>
+              </span>
+                    </Link>
         </div>
       </div>
 

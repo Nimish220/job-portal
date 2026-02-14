@@ -824,3 +824,73 @@ export const resetPasswordRecruiter = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+//Notifications
+// 1. Fetch Recruiter Notifications
+export const fetchNotifications = async (req, res) => {
+  try {
+    const notifications = await Notification.find({ 
+      recipient: req.recruiter._id,
+      recipientModel: "Recruiter" 
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, notifications });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching notifications" });
+  }
+};
+
+// 2. Mark ALL as Read
+export const markAllNotificationsRead = async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { recipient: req.recruiter._id, recipientModel: "Recruiter", isRead: false },
+      { $set: { isRead: true } }
+    );
+    res.status(200).json({ success: true, message: "All marked as read" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// 3. Delete ALL Notifications
+export const deleteAllNotifications = async (req, res) => {
+  try {
+    await Notification.deleteMany({ 
+      recipient: req.recruiter._id, 
+      recipientModel: "Recruiter" 
+    });
+    res.status(200).json({ success: true, message: "All notifications deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// 4. Mark SINGLE as read
+export const markAsRead = async (req, res) => {
+  try {
+    const notification = await Notification.findOneAndUpdate(
+      { _id: req.params.id, recipient: req.recruiter._id },
+      { isRead: true },
+      { new: true }
+    );
+    if (!notification) return res.status(404).json({ message: "Notification not found" });
+    res.status(200).json({ success: true, notification });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error marking as read" });
+  }
+};
+
+// 5. Delete SINGLE notification
+export const deleteNotification = async (req, res) => {
+  try {
+    const notification = await Notification.findOneAndDelete({ 
+      _id: req.params.id, 
+      recipient: req.recruiter._id 
+    });
+    if (!notification) return res.status(404).json({ message: "Notification not found" });
+    res.status(200).json({ success: true, message: "Notification deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error deleting notification" });
+  }
+};
