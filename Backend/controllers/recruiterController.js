@@ -671,14 +671,17 @@ export const getCandidateProfile = async (req, res) => {
     if (!isCandidate) {
       return res.status(404).json({ message: "Candidate did not apply to this specific posting" });
     }
+    
 
     // 5. Fetch full user details (this populates the missing About, Skills, Experience)
     const user = await User.findById(applicantId).select(
       "name email university city degree github about skills experience profilePhoto resume"
     );
-
+    if (user.resume && user.resume.length > 0) {
+      user.resume = [user.resume[user.resume.length - 1]];
+    }
     if (!user) {
-      return res.status(404).json({ message: "User profile details not found" });
+      return res.status(404).json({ message: "User profile details not found" });  //This logic picks the very last item in the user's resume array, ensuring the recruiter views the most recent version of their CV.
     }
 
     res.status(200).json(user);
