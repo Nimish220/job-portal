@@ -252,7 +252,14 @@ export const applyToJobs = async (req, res) => {
     }
 
     // 6. Update Job and User records
-    job.candidates.push(user._id);
+    //job.candidates.push(user._id);
+    const resumeUrlToSave = resumeData ? resumeData.fileUrl : (user.resume.length > 0 ? user.resume[user.resume.length - 1].fileUrl : null);
+
+    job.candidates.push({
+        candidate: user._id,
+        resumeUsed: resumeUrlToSave, // Save the specific URL at the time of application
+        appliedAt: new Date()
+    });
     user.appliedJobs.push(job._id);
 
     await job.save({ validateBeforeSave: false });
@@ -379,6 +386,98 @@ export const removeSavedJob = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+export const applyToInternships = async (req, res) => {
+    try {
+        // 1. Extract Internship ID from body
+        const { internshipId } = req.body; 
+        
+        // 2. Find the Internship and populate the Recruiter for notification
+        const internship = await Internship.findById(internshipId).populate('recruiter');
+        if (!internship) return res.status(404).json({ message: "Internship not found" });
+
+        // 3. Check if the internship is open
+        if (internship.status === "closed")
+            return res.status(403).json({ message: "Internship opening is closed" });
+
+        // 4. Validate User existence (req.user from authMiddleware)
+        const user = await User.findById(req.user._id); 
+        if (!user) return res.status(404).json({ message: "User not found" });
+        
+        // 5. Check for duplicate application
+        const alreadyApplied = internship.candidates.some(
+            (c) => c.candidate.toString() === user._id.toString()
+        );
+        if (alreadyApplied)
+            return res.status(403).json({ message: "Already applied to this internship" });
+        // Ensure you are pushing to appliedInternships, NOT appliedJobs
+        //user.appliedInternships.push(internshipId);
+        //await user.save({ validateBeforeSave: false });
+        // 6. Handle File Upload using Buffer (Multer Memory Storage)
+        let resumeData = null;
+        if (req.file && req.file.buffer) {
+            try {
+                // Upload to Cloudinary using shared helper
+                const uploadedUrl = await uploadToCloudinary(req.file.buffer, "user_resumes");
+
+                // Prepare object for User Schema resume array
+                resumeData = {
+                    fileName: req.file.originalname,
+                    fileUrl: uploadedUrl,
+                    uploadedAt: new Date()
+                };
+
+                // Add to user's resume list
+                user.resume.push(resumeData);
+            } catch (uploadError) {
+                console.error("Cloudinary Upload Error:", uploadError);
+                return res.status(500).json({ message: "Failed to upload resume" });
+            }
+        } else {
+            return res.status(400).json({ message: "Resume file is required" });
+        }
+
+        // 7. Perform the Application Update (Mongoose)
+        //internship.candidates.push(user._id);
+        const resumeUrlToSave = resumeData ? resumeData.fileUrl : (user.resume.length > 0 ? user.resume[user.resume.length - 1].fileUrl : null);
+
+        internship.candidates.push({
+            candidate: user._id,
+            resumeUsed: resumeUrlToSave,
+            appliedAt: new Date()
+        });
+        user.appliedInternships.push(internship._id);
+        
+        // Save both records
+        await internship.save({ validateBeforeSave: false });
+        await user.save({ validateBeforeSave: false });
+
+        // 8. Send notification to recruiter
+        if (internship.recruiter && internship.recruiter._id) {
+            await Notification.create({
+                recipient: internship.recruiter._id,
+                recipientModel: "Recruiter",
+                sender: user._id,
+                senderModel: "User",
+                type: "internship_applied",
+                message: `${user.name} applied for your internship: ${internship.internshipRole || internship.title}`,
+                internship: internship._id,
+            });
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Applied to Internship successfully",
+            resume: resumeData 
+        });
+    } catch (error) {
+        console.error("Apply to Internship Error:", error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message, 
+            message: "Server error during application" 
+        });
+    }
+};
 export const getInternships = async (req, res) => {
   try {
     // Populate the recruiter field to get companyName
@@ -433,89 +532,6 @@ export const getInternshipWorkflow = async (req, res) => {
   }
 };
 
-export const applyToInternships = async (req, res) => {
-    try {
-        // 1. Extract Internship ID from body
-        const { internshipId } = req.body; 
-        
-        // 2. Find the Internship and populate the Recruiter for notification
-        const internship = await Internship.findById(internshipId).populate('recruiter');
-        if (!internship) return res.status(404).json({ message: "Internship not found" });
-
-        // 3. Check if the internship is open
-        if (internship.status === "closed")
-            return res.status(403).json({ message: "Internship opening is closed" });
-
-        // 4. Validate User existence (req.user from authMiddleware)
-        const user = await User.findById(req.user._id); 
-        if (!user) return res.status(404).json({ message: "User not found" });
-        
-        // 5. Check for duplicate application
-        const alreadyApplied = internship.candidates.includes(user._id);
-        if (alreadyApplied)
-            return res.status(403).json({ message: "Already applied to this internship" });
-        // Ensure you are pushing to appliedInternships, NOT appliedJobs
-        //user.appliedInternships.push(internshipId);
-        //await user.save({ validateBeforeSave: false });
-        // 6. Handle File Upload using Buffer (Multer Memory Storage)
-        let resumeData = null;
-        if (req.file && req.file.buffer) {
-            try {
-                // Upload to Cloudinary using shared helper
-                const uploadedUrl = await uploadToCloudinary(req.file.buffer, "user_resumes");
-
-                // Prepare object for User Schema resume array
-                resumeData = {
-                    fileName: req.file.originalname,
-                    fileUrl: uploadedUrl,
-                    uploadedAt: new Date()
-                };
-
-                // Add to user's resume list
-                user.resume.push(resumeData);
-            } catch (uploadError) {
-                console.error("Cloudinary Upload Error:", uploadError);
-                return res.status(500).json({ message: "Failed to upload resume" });
-            }
-        } else {
-            return res.status(400).json({ message: "Resume file is required" });
-        }
-
-        // 7. Perform the Application Update (Mongoose)
-        internship.candidates.push(user._id);
-        user.appliedInternships.push(internship._id);
-        
-        // Save both records
-        await internship.save({ validateBeforeSave: false });
-        await user.save({ validateBeforeSave: false });
-
-        // 8. Send notification to recruiter
-        if (internship.recruiter && internship.recruiter._id) {
-            await Notification.create({
-                recipient: internship.recruiter._id,
-                recipientModel: "Recruiter",
-                sender: user._id,
-                senderModel: "User",
-                type: "internship_applied",
-                message: `${user.name} applied for your internship: ${internship.internshipRole || internship.title}`,
-                internship: internship._id,
-            });
-        }
-
-        res.status(200).json({ 
-            success: true, 
-            message: "Applied to Internship successfully",
-            resume: resumeData 
-        });
-    } catch (error) {
-        console.error("Apply to Internship Error:", error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message, 
-            message: "Server error during application" 
-        });
-    }
-};
 
 export const forgotPassword = async (req, res) => {
     let user; // Define user outside so the catch block can see it
