@@ -77,8 +77,8 @@ const RecruiterRegister = () => {
     return;
   }
 
-  console.log("📁 File selected:", formData.panCardOrGstFile);
-  console.log("📎 Is File?", formData.panCardOrGstFile instanceof File);
+ // console.log("📁 File selected:", formData.panCardOrGstFile);
+ // console.log("📎 Is File?", formData.panCardOrGstFile instanceof File);
 
   setStep(2);
 };
@@ -262,7 +262,7 @@ console.log("isFile?", formData.panCardOrGstFile instanceof File);
         <div className="w-full lg:w-3/4 p-10">
           <h2 className="text-2xl font-bold text-[#5F9D08] mb-6 text-center">Company Registration</h2>
 
-          <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4 p-8 lg:px-32">
+          <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4 p-4 sm:p-8 lg:px-32">
 
             {step === 1 && (
               <>
@@ -343,18 +343,68 @@ console.log("isFile?", formData.panCardOrGstFile instanceof File);
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-gray-700 mb-1">Upload PAN Card or GST Document(PDF only)<span className="text-red-500">*</span></label>
-                  <input
-                    type="file"
-                    name="panCardOrGstFile"
-                    onChange={handleChange}
-                    accept=".pdf"
-                    required
-                    className="p-2 border border-gray-300 rounded bg-gray-100"
-                  />
-                </div>
+                    <label className="text-gray-700 mb-2 text-sm font-medium">
+                      Upload PAN Card or GST Document (PDF only)<span className="text-red-500">*</span>
+                    </label>
+                    
+                    <div className="relative">
+                      {!formData.panCardOrGstFile ? (
+                        /* UPLOAD STATE */
+                        <label className="flex flex-col items-center justify-center w-full h-24 md:h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <div className="flex flex-col items-center justify-center py-4">
+                            <p className="text-sm text-gray-500 text-center px-2">
+                              <span className="font-semibold text-[#5F9D08]">Click to upload</span> or drag and drop
+                            </p>
+                            <p className="text-xs text-gray-400">PDF (MAX. 5MB)</p>
+                          </div>
+                          <input 
+                            type="file" 
+                            name="panCardOrGstFile" 
+                            className="hidden" 
+                            onChange={handleChange} 
+                            accept=".pdf" 
+                            required 
+                          />
+                        </label>
+                      ) : (
+                        /* FILE SELECTED STATE */
+                        <div className="flex items-center justify-between w-full p-3 bg-green-50 border border-green-200 rounded-lg h-24">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="bg-[#5F9D08] text-white p-2 rounded">
+                              <span className="text-xs font-bold">PDF</span>
+                            </div>
+                            <div className="flex flex-col overflow-hidden">
+                              <p className="text-sm font-medium text-gray-800 truncate max-w-[150px] md:max-w-xs">
+                                {formData.panCardOrGstFile.name}
+                              </p>
+                              <a 
+                                href={URL.createObjectURL(formData.panCardOrGstFile)} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-[#5F9D08] hover:underline font-semibold w-fit"
+                              >
+                                View Document
+                              </a>
+                            </div>
+                          </div>
+                          
+                          {/* Remove File Button (Cross Icon) */}
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, panCardOrGstFile: null })}
+                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                            title="Remove file"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l18 18" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-                <div className="flex justify-between gap-20 mt-4">
+                <div className="flex flex-row justify-between gap-4 sm:gap-20 mt-6">
                   <button type="button" onClick={() => setStep(1)} className="bg-gray-300 cursor-pointer text-black py-2 px-6 rounded hover:bg-gray-400 transition-all duration-300">Previous</button>
                   <button type="submit" className="bg-[#5F9D08] text-white cursor-pointer py-2 px-6 rounded hover:scale-105 transition-all duration-300 hover:bg-[#4e9d08] w-full">Register</button>
                 </div>
