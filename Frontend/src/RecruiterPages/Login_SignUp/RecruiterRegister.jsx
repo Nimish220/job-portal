@@ -102,8 +102,8 @@ const handleSubmit = async (e) => {
       combinedFormData.append(key, formData[key]);
     }
   }
-  console.log("file selected:", formData.panCardOrGstFile);
-console.log("isFile?", formData.panCardOrGstFile instanceof File);
+  //console.log("file selected:", formData.panCardOrGstFile);
+  //console.log("isFile?", formData.panCardOrGstFile instanceof File);
 
   const result = await register(combinedFormData);
   if (result?.success) {
@@ -355,15 +355,14 @@ console.log("isFile?", formData.panCardOrGstFile instanceof File);
                             <p className="text-sm text-gray-500 text-center px-2">
                               <span className="font-semibold text-[#5F9D08]">Click to upload</span> or drag and drop
                             </p>
-                            <p className="text-xs text-gray-400">PDF (MAX. 5MB)</p>
+                            <p className="text-xs text-gray-400">PDF (MAX. 2MB)</p>
                           </div>
                           <input 
                             type="file" 
                             name="panCardOrGstFile" 
                             className="hidden" 
                             onChange={handleChange} 
-                            accept=".pdf" 
-                            required 
+                            accept=".pdf"  
                           />
                         </label>
                       ) : (
